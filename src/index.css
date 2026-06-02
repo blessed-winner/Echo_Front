@@ -1,0 +1,135 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  --font-manrope: "Manrope", sans-serif;
+  --font-inter: "Inter", sans-serif;
+  --font-serif: "Cormorant Garamond", serif;
+  --font-dm: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+
+  /* Legacy Exact Palette v3 */
+  --color-primary: #182442;
+  --color-on-primary: #ffffff;
+  
+  --color-background: #f7f9fb;
+  --color-surface: #ffffff;
+  --color-surface-dim: #e2e8f0;
+  
+  --color-text-primary: #182442;
+  --color-text-secondary: #64748b;
+  
+  --color-outline: #e2e8f0;
+
+  --color-indigo-600: #4f46e5;
+  --color-emerald-50: #ecfdf5;
+  --color-blue-50: #eff6ff;
+  
+  --color-secondary-green: #3c6752;
+
+  --radius-xl: 0.75rem;
+  
+  --spacing-gutter: 24px;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-background);
+    color: var(--color-text-primary);
+    @apply font-inter antialiased;
+  }
+
+  /* Global Scrollbar Hiding */
+  * {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+
+  *::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+  }
+}
+
+@utility material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+@utility echo-card {
+  @apply bg-white border border-slate-200 rounded-xl p-6 shadow-sm transition-all duration-300;
+}
+
+@utility fab-btn {
+  @apply fixed bottom-8 right-8 w-14 h-14 bg-[#182442] text-white rounded-full shadow-2xl shadow-[#182442]/25 flex items-center justify-center hover:scale-110 hover:bg-[#1e2d52] active:scale-90 transition-all z-50 cursor-pointer;
+}
+
+@utility badge-critical {
+  @apply bg-[#fef2f2] text-[#ba1a1a] border border-[#ba1a1a]/10;
+}
+
+@utility badge-medium {
+  @apply bg-[#fffbeb] text-[#b45309] border border-[#b45309]/10;
+}
+
+@utility badge-low {
+  @apply bg-[#f8fafc] text-[#64748b] border border-slate-100;
+}
+
+/* TipTap Editor Styles */
+.ProseMirror {
+  outline: none;
+  position: relative;
+}
+
+/* TipTap Placeholder - shows semantic placeholders */
+.ProseMirror h1.is-empty::before,
+.ProseMirror h1.is-node-empty::before {
+  color: #cbd5e1;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  font-size: 1.875rem;
+  font-weight: 700;
+  font-family: "Manrope", sans-serif;
+}
+
+.ProseMirror p.is-empty::before,
+.ProseMirror p.is-node-empty::before {
+  color: #cbd5e1;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Style h1 as title */
+.ProseMirror h1 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #182442;
+  font-family: "Manrope", sans-serif;
+  margin-bottom: 2rem;
+  line-height: 1.2;
+}
+
+.ProseMirror strong {
+  font-weight: 700;
+}
+
+.ProseMirror em {
+  font-style: italic;
+}
+
+.ProseMirror u {
+  text-decoration: underline;
+}
+
+.ProseMirror p {
+  margin-bottom: 1em;
+  color: #64748b;
+}
+
+.ProseMirror p:last-child {
+  margin-bottom: 0;
+}
