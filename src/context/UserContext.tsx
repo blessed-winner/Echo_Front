@@ -30,8 +30,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [userEmail, setUserEmail] = useState('');
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(initialToken);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(!!initialToken); // Set true if token exists
+  const [isAuthLoading, setIsAuthLoading] = useState(!!initialToken); // Only load if we have a token
   const [userRole, setUserRole] = useState<'USER' | 'ADMIN' | null>(null);
 
   const updateUserProfile = (name: string, email: string) => {
@@ -57,18 +57,23 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUserRole(userData.role || 'USER');
         setAccessToken(token);
         setIsAuthenticated(true);
+        setIsAuthLoading(false);
         return true;
       }
       
+      // Invalid data, clear auth
+      clearStoredAccessToken();
+      setAccessToken(null);
+      setIsAuthenticated(false);
+      setIsAuthLoading(false);
       return false;
     } catch (error) {
       console.error('[UserContext] Failed to fetch user data:', error);
       clearStoredAccessToken();
       setAccessToken(null);
       setIsAuthenticated(false);
-      return false;
-    } finally {
       setIsAuthLoading(false);
+      return false;
     }
   };
 
@@ -82,17 +87,15 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
-    const bootstrapAuth = async () => {
-      const storedToken = getStoredAccessToken();
-
-      if (storedToken) {
-        await hydrateUser();
-      } else {
-        await refreshSession();
-      }
-    };
-
-    void bootstrapAuth();
+    // If we have a token, try to hydrate user data
+    const storedToken = getStoredAccessToken();
+    if (storedToken) {
+      hydrateUser();
+    } else {
+      // No token, not authenticated
+      setIsAuthLoading(false);
+      setIsAuthenticated(false);
+    }
   }, []);
 
   const login = async (email: string, password: string) => {
