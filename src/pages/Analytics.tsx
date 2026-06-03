@@ -189,10 +189,13 @@ const Analytics: React.FC = () => {
           userAnalytics: uAnalytics ? 'success' : 'failed',
           memoryStats: mStats ? 'success' : 'failed',
           recentReviews: rReviews.length,
-          recentReviewsSample: rReviews.slice(0, 3).map(r => ({ date: r.reviewDate, rating: r.rating })),
+          recentReviewsSample: rReviews.slice(0, 5).map(r => ({ 
+            date: r.reviewDate, 
+            rating: r.rating,
+            dateType: typeof r.reviewDate 
+          })),
           memoryItems: mItems.length,
-          adminAnalytics: aAnalytics ? 'success' : 'not admin',
-          timestamp: new Date().toISOString()
+          adminAnalytics: aAnalytics ? 'success' : 'not admin'
         });
 
         setUserAnalytics(uAnalytics);
@@ -269,10 +272,18 @@ const Analytics: React.FC = () => {
 
   const heatmapCellCount = heatmapView === 'year' ? 364 : 168;
 
-  const heatmapCells = useMemo(
-    () => buildHeatmapCells(recentReviews, heatmapCellCount),
-    [recentReviews, heatmapCellCount]
-  );
+  const heatmapCells = useMemo(() => {
+    const cells = buildHeatmapCells(recentReviews, heatmapCellCount);
+    
+    // Debug output
+    console.log('[Heatmap Build]', {
+      totalReviews: recentReviews.length,
+      cellsWithData: cells.filter(c => c.count > 0).length,
+      sampleCells: cells.filter(c => c.count > 0).slice(0, 5)
+    });
+    
+    return cells;
+  }, [recentReviews, heatmapCellCount]);
 
   const heatmapWeekCount = getHeatmapWeekCount(heatmapCellCount);
 
