@@ -128,12 +128,6 @@ export const api: AxiosInstance = axios.create({
 });
 
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  // Add unique timestamp to prevent browser caching
-  const timestamp = Date.now();
-  const separator = config.url?.includes('?') ? '&' : '?';
-  config.url = `${config.url}${separator}_t=${timestamp}`;
-
-  // Add auth token if available
   const token = getStoredAccessToken();
 
   if (token) {
