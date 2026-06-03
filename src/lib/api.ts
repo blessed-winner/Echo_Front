@@ -135,6 +135,10 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
     (config.headers as Record<string, string>).Authorization = `Bearer ${token}`;
   }
 
+  // Add cache-busting parameter to all requests
+  const separator = config.url?.includes('?') ? '&' : '?';
+  config.url = `${config.url}${separator}_=${Date.now()}`;
+
   return config;
 });
 

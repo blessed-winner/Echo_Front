@@ -289,40 +289,13 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  // Refresh data when navigating back from review session OR when page becomes visible
+  // Refresh data when navigating back from review session
   useEffect(() => {
     if (location.state?.from === '/review') {
       setRefreshTrigger(prev => prev + 1);
       window.history.replaceState({}, document.title);
     }
   }, [location]);
-
-  // Listen for global refresh events
-  useEffect(() => {
-    const handleRefresh = () => {
-      setRefreshTrigger(prev => prev + 1);
-    };
-
-    eventBus.on(EVENTS.REVIEW_COMPLETED, handleRefresh);
-    eventBus.on(EVENTS.DATA_REFRESH_NEEDED, handleRefresh);
-
-    return () => {
-      eventBus.off(EVENTS.REVIEW_COMPLETED, handleRefresh);
-      eventBus.off(EVENTS.DATA_REFRESH_NEEDED, handleRefresh);
-    };
-  }, []);
-
-  // Refresh data when page becomes visible (user switches tabs)
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden && !isAuthLoading && accessToken) {
-        setRefreshTrigger(prev => prev + 1);
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [isAuthLoading, accessToken]);
 
   useEffect(() => {
     let isMounted = true;
@@ -334,18 +307,15 @@ const Dashboard: React.FC = () => {
       }
 
       setIsLoading(true);
-      console.log('Dashboard: Starting data fetch with token present', { timestamp: new Date().toISOString(), refreshTrigger });
 
       try {
-        console.log('Loading dashboard data...', { refreshTrigger, timestamp: new Date().toISOString() });
-        // Add timestamp to prevent caching - use unique timestamp for each request
-        const timestamp = Date.now();
-        const analyticsPromise = api.get<UserAnalyticsDto>(`/analytics/me?_t=${timestamp}`);
-        const reviewSummaryPromise = api.get<ReviewSummaryDto>(`/reviews/summary?_t=${timestamp + 1}`);
-        const memoryStatsPromise = api.get<MemoryStatsDto>(`/memories/stats?_t=${timestamp + 2}`);
-        const dueItemsPromise = api.get<PageResponse<MemoryItemDto>>(`/memories/due?limit=3&_t=${timestamp + 3}`);
-        const topicsPromise = api.get<PageResponse<TopicDto>>(`/topics?page=0&size=3&_t=${timestamp + 4}`);
-        const recentReviewsPromise = api.get<PageResponse<ReviewDto>>(`/reviews/recent?limit=500&_t=${timestamp + 5}`);
+        // Fetch all data in parallel
+        const analyticsPromise = api.get<UserAnalyticsDto>('/analytics/me');
+        const reviewSummaryPromise = api.get<ReviewSummaryDto>('/reviews/summary');
+        const memoryStatsPromise = api.get<MemoryStatsDto>('/memories/stats');
+        const dueItemsPromise = api.get<PageResponse<MemoryItemDto>>('/memories/due?limit=3');
+        const topicsPromise = api.get<PageResponse<TopicDto>>('/topics?page=0&size=3');
+        const recentReviewsPromise = api.get<PageResponse<ReviewDto>>('/reviews/recent?limit=500');
 
         const [analyticsResult, reviewSummaryResult, memoryStatsResult, dueItemsResult, topicsResult, recentReviewsResult] =
           await Promise.allSettled([
@@ -359,26 +329,7 @@ const Dashboard: React.FC = () => {
 
         if (!isMounted) {
           return;
-        }
-
-        console.log('API Results:', {
-          analytics: analyticsResult.status,
-          reviewSummary: reviewSummaryResult.status,
-          memoryStats: memoryStatsResult.status,
-          dueItems: dueItemsResult.status,
-          topics: topicsResult.status,
-          recentReviews: recentReviewsResult.status
-        });
-
-        // Log any rejected promises
-        if (analyticsResult.status === 'rejected') console.error('Analytics failed:', analyticsResult.reason);
-        if (reviewSummaryResult.status === 'rejected') console.error('Review summary failed:', reviewSummaryResult.reason);
-        if (memoryStatsResult.status === 'rejected') console.error('Memory stats failed:', memoryStatsResult.reason);
-        if (dueItemsResult.status === 'rejected') console.error('Due items failed:', dueItemsResult.reason);
-        if (topicsResult.status === 'rejected') console.error('Topics failed:', topicsResult.reason);
-        if (recentReviewsResult.status === 'rejected') console.error('Recent reviews failed:', recentReviewsResult.reason);
-
-        const analytics =
+        }        const analytics =
           analyticsResult.status === 'fulfilled' && analyticsResult.value?.data
             ? analyticsResult.value.data
             : null;

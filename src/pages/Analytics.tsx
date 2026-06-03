@@ -73,43 +73,13 @@ const Analytics: React.FC = () => {
   }, [heatmapView]);
 
   // Refresh data when navigating back from review session OR when page becomes visible
+  // Refresh data when navigating back from review session
   useEffect(() => {
     if (location.state?.from === '/review') {
-      console.log('Analytics: Detected return from review session, refreshing data...');
       setRefreshTrigger(prev => prev + 1);
-      // Clear the state to prevent re-triggering
       window.history.replaceState({}, document.title);
     }
   }, [location]);
-
-  // Listen for global refresh events
-  useEffect(() => {
-    const handleRefresh = () => {
-      console.log('Analytics: Received global refresh event');
-      setRefreshTrigger(prev => prev + 1);
-    };
-
-    eventBus.on(EVENTS.REVIEW_COMPLETED, handleRefresh);
-    eventBus.on(EVENTS.DATA_REFRESH_NEEDED, handleRefresh);
-
-    return () => {
-      eventBus.off(EVENTS.REVIEW_COMPLETED, handleRefresh);
-      eventBus.off(EVENTS.DATA_REFRESH_NEEDED, handleRefresh);
-    };
-  }, []);
-
-  // Refresh data when page becomes visible (user switches tabs)
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden && !isAuthLoading && accessToken) {
-        console.log('Analytics: Page became visible, refreshing data...');
-        setRefreshTrigger(prev => prev + 1);
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [isAuthLoading, accessToken]);
 
   // States
   const [userAnalytics, setUserAnalytics] = useState<UserAnalyticsDto | null>(null);
@@ -123,32 +93,18 @@ const Analytics: React.FC = () => {
     let isMounted = true;
 
     const fetchAnalyticsData = async () => {
-      console.log('Analytics: fetchAnalyticsData called', { isAuthLoading, hasAccessToken: !!accessToken });
-      
-      // Wait for auth to complete
-      if (isAuthLoading) {
-        console.log('Analytics: Waiting for auth...');
-        return;
-      }
-
-      // Ensure we have a token before making API calls
-      if (!accessToken) {
-        console.log('Analytics: No access token');
+      if (isAuthLoading || !accessToken) {
         setIsLoading(false);
         return;
       }
 
       setIsLoading(true);
-      console.log('Analytics: Starting API calls with token present');
       
       try {
-        console.log('Loading analytics data...', { refreshTrigger, timestamp: new Date().toISOString() });
-        // Add timestamp to prevent caching - use unique timestamp for each request
-        const timestamp = Date.now();
-        const userAnalyticsPromise = api.get<UserAnalyticsDto>(`/analytics/me?_t=${timestamp}`);
-        const memoryStatsPromise = api.get<MemoryStatsDto>(`/memories/stats?_t=${timestamp + 1}`);
-        const recentReviewsPromise = api.get<PageResponse<ReviewDto>>(`/reviews/recent?limit=1000&_t=${timestamp + 2}`);
-        const memoryItemsPromise = api.get<PageResponse<MemoryItemDto>>(`/memories?page=0&size=200&_t=${timestamp + 3}`);
+        const userAnalyticsPromise = api.get<UserAnalyticsDto>('/analytics/me');
+        const memoryStatsPromise = api.get<MemoryStatsDto>('/memories/stats');
+        const recentReviewsPromise = api.get<PageResponse<ReviewDto>>('/reviews/recent?limit=1000');
+        const memoryItemsPromise = api.get<PageResponse<MemoryItemDto>>('/memories?page=0&size=200');
 
         const isAdmin = userRole === 'ADMIN';
         const adminPromise = isAdmin 
@@ -186,19 +142,6 @@ const Analytics: React.FC = () => {
         const aAnalytics = adminResult.status === 'fulfilled' && adminResult.value?.data 
           ? adminResult.value.data 
           : null;
-
-        console.log('Analytics data loaded:', {
-          userAnalytics: uAnalytics ? 'success' : 'failed',
-          memoryStats: mStats ? 'success' : 'failed',
-          recentReviews: rReviews.length,
-          recentReviewsSample: rReviews.slice(0, 5).map(r => ({ 
-            date: r.reviewDate, 
-            rating: r.rating,
-            dateType: typeof r.reviewDate 
-          })),
-          memoryItems: mItems.length,
-          adminAnalytics: aAnalytics ? 'success' : 'not admin'
-        });
 
         setUserAnalytics(uAnalytics);
         setMemoryStats(mStats);

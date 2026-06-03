@@ -195,9 +195,6 @@ const ReviewSession: React.FC = () => {
         timeSpentSeconds: timeSpent
       });
 
-      console.log('[ReviewSession] Review submitted, emitting refresh event');
-      eventBus.emit(EVENTS.REVIEW_COMPLETED);
-
       setReviewedCount(prev => prev + 1);
 
       if (currentIndex < totalItems - 1) {
@@ -205,12 +202,7 @@ const ReviewSession: React.FC = () => {
         setShowAnswer(false);
         setCardStartTime(Date.now());
       } else {
-        // Session complete - emit event and wait briefly before navigation
-        console.log('[ReviewSession] Session complete, emitting final refresh event');
-        eventBus.emit(EVENTS.DATA_REFRESH_NEEDED);
-        
-        // Wait 100ms to ensure event propagates before navigation
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Session complete - navigate back
         navigateBack();
       }
     } catch (error) {
