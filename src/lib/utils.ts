@@ -103,21 +103,24 @@ export function buildHeatmapCells(
   reviews: Array<{ reviewDate: string }>,
   cellCount: number
 ): HeatmapCell[] {
+  // Get today's date at midnight
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const start = new Date(today);
-  const dayOfWeek = start.getDay();
-  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-  start.setDate(start.getDate() + mondayOffset - (cellCount - 1));
+  // Calculate start date (cellCount days before today)
+  const startDate = new Date(today);
+  startDate.setDate(startDate.getDate() - (cellCount - 1));
 
+  // Create array of all dates from start to today
   const datesList: string[] = [];
-  const cursor = new Date(start);
-  for (let i = 0; i < cellCount; i++) {
-    datesList.push(toLocalDateKey(cursor));
-    cursor.setDate(cursor.getDate() + 1);
+  const currentDate = new Date(startDate);
+  
+  while (currentDate <= today) {
+    datesList.push(toLocalDateKey(currentDate));
+    currentDate.setDate(currentDate.getDate() + 1);
   }
 
+  // Count reviews per date
   const reviewCounts: Record<string, number> = {};
   reviews.forEach((r) => {
     if (!r.reviewDate) return;
@@ -127,11 +130,13 @@ export function buildHeatmapCells(
     }
   });
 
-  // Debug: Log today's data
+  // Log for debugging
   const todayKey = toLocalDateKey(today);
+  console.log('[Heatmap] Date range:', datesList[0], 'to', datesList[datesList.length - 1]);
   console.log('[Heatmap] Today:', todayKey, 'Reviews today:', reviewCounts[todayKey] || 0);
-  console.log('[Heatmap] All review dates:', Object.keys(reviewCounts).sort());
+  console.log('[Heatmap] Total dates:', datesList.length, 'Dates with reviews:', Object.keys(reviewCounts).length);
 
+  // Create cells for all dates
   return datesList.map((dateStr) => {
     const count = reviewCounts[dateStr] || 0;
     return {
