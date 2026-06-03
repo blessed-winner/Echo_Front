@@ -61,17 +61,19 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return true;
       }
       
-      // Invalid data, clear auth
-      clearStoredAccessToken();
-      setAccessToken(null);
-      setIsAuthenticated(false);
+      // Invalid response structure - keep auth for now
       setIsAuthLoading(false);
       return false;
-    } catch (error) {
+    } catch (error: any) {
       console.error('[UserContext] Failed to fetch user data:', error);
-      clearStoredAccessToken();
-      setAccessToken(null);
-      setIsAuthenticated(false);
+      
+      // Only clear auth if it's a 401 (unauthorized)
+      if (error?.response?.status === 401) {
+        clearStoredAccessToken();
+        setAccessToken(null);
+        setIsAuthenticated(false);
+      }
+      
       setIsAuthLoading(false);
       return false;
     }
@@ -151,9 +153,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await hydrateUser();
       return true;
     } catch (error) {
-      clearStoredAccessToken();
-      setAccessToken(null);
-      setIsAuthenticated(false);
+      // Don't clear tokens on refresh failure - user might just be offline
       setIsAuthLoading(false);
       return false;
     }
