@@ -57,10 +57,44 @@ const ReviewSession: React.FC = () => {
   const [cardStartTime, setCardStartTime] = useState<number>(Date.now());
   const [reviewedCount, setReviewedCount] = useState(0);
   const [currentStreak, setCurrentStreak] = useState(0);
+  const [reviewIntervals, setReviewIntervals] = useState<{againDays: number; hardDays: number; goodDays: number; easyDays: number} | null>(null);
 
   const currentItem = (dueItems && dueItems.length > 0) ? dueItems[currentIndex] : null;
   const totalItems = dueItems ? dueItems.length : 0;
   const progressPercent = totalItems > 0 ? Math.round((reviewedCount / totalItems) * 100) : 0;
+
+  // Format interval for display
+  const formatInterval = (days: number): string => {
+    if (days < 1) return '<1d';
+    if (days === 1) return '1d';
+    if (days < 30) return `${days}d`;
+    if (days < 365) {
+      const months = Math.round(days / 30);
+      return `${months}mo`;
+    }
+    const years = Math.round(days / 365);
+    return `${years}y`;
+  };
+
+  // Fetch intervals for current item
+  useEffect(() => {
+    if (!currentItem) return;
+    
+    const fetchIntervals = async () => {
+      try {
+        const response = await api.get<{againDays: number; hardDays: number; goodDays: number; easyDays: number}>(
+          `/memories/${currentItem.id}/preview-intervals`
+        );
+        setReviewIntervals(response.data);
+      } catch (error) {
+        console.error('Failed to fetch review intervals:', error);
+        // Fallback to static values
+        setReviewIntervals({ againDays: 1, hardDays: 2, goodDays: 4, easyDays: 7 });
+      }
+    };
+    
+    fetchIntervals();
+  }, [currentItem]);
 
   useEffect(() => {
     let isMounted = true;
@@ -411,7 +445,9 @@ const ReviewSession: React.FC = () => {
                     className="group flex flex-col items-center gap-1 p-6 border border-[#ba1a1a]/20 rounded-xl hover:bg-[#ffdad6]/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <span className="font-bold text-[#ba1a1a]">Again</span>
-                    <span className="text-[10px] font-bold text-[#93000a] opacity-60 group-hover:opacity-100 tracking-widest uppercase">&lt; 1m</span>
+                    <span className="text-[10px] font-bold text-[#93000a] opacity-60 group-hover:opacity-100 tracking-widest uppercase">
+                      {reviewIntervals ? formatInterval(reviewIntervals.againDays) : '1d'}
+                    </span>
                   </button>
                   <button 
                     onClick={() => handleReview('HARD')}
@@ -419,7 +455,9 @@ const ReviewSession: React.FC = () => {
                     className="group flex flex-col items-center gap-1 p-6 border border-[#c6c6ce] rounded-xl hover:bg-[#eceef0] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <span className="font-bold text-[#45464e]">Hard</span>
-                    <span className="text-[10px] font-bold text-[#75777e] opacity-60 group-hover:opacity-100 tracking-widest uppercase">2d</span>
+                    <span className="text-[10px] font-bold text-[#75777e] opacity-60 group-hover:opacity-100 tracking-widest uppercase">
+                      {reviewIntervals ? formatInterval(reviewIntervals.hardDays) : '2d'}
+                    </span>
                   </button>
                   <button 
                     onClick={() => handleReview('GOOD')}
@@ -427,7 +465,9 @@ const ReviewSession: React.FC = () => {
                     className="group flex flex-col items-center gap-1 p-6 bg-[#182442] rounded-xl hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <span className="font-bold text-white">Good</span>
-                    <span className="text-[10px] font-bold text-white/80 group-hover:opacity-100 tracking-widest uppercase">4d</span>
+                    <span className="text-[10px] font-bold text-white/80 group-hover:opacity-100 tracking-widest uppercase">
+                      {reviewIntervals ? formatInterval(reviewIntervals.goodDays) : '4d'}
+                    </span>
                   </button>
                   <button 
                     onClick={() => handleReview('EASY')}
@@ -435,7 +475,9 @@ const ReviewSession: React.FC = () => {
                     className="group flex flex-col items-center gap-1 p-6 bg-[#3c6752] rounded-xl hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <span className="font-bold text-white">Easy</span>
-                    <span className="text-[10px] font-bold text-white/80 group-hover:opacity-100 tracking-widest uppercase">7d</span>
+                    <span className="text-[10px] font-bold text-white/80 group-hover:opacity-100 tracking-widest uppercase">
+                      {reviewIntervals ? formatInterval(reviewIntervals.easyDays) : '7d'}
+                    </span>
                   </button>
                 </div>
 

@@ -14,6 +14,8 @@ interface UserAnalyticsDto {
   reviewsThisWeek: number;
   retentionRate: number;
   currentStreak: number;
+  newItemsThisWeek: number;
+  masteredItems: number;
 }
 
 interface AdminSystemAnalyticsDto {
@@ -394,16 +396,61 @@ const Analytics: React.FC = () => {
   const retentionRate = userAnalytics?.retentionRate ?? 0;
   const currentStreak = userAnalytics?.currentStreak ?? memoryStats?.streak ?? 0;
 
-  // New items created in last 7 days
-  const newItemsAdded = Array.isArray(memoryItems) 
-    ? memoryItems.filter(item => {
-        const diff = Date.now() - new Date(item.createdAt).getTime();
-        return diff < 7 * 24 * 60 * 60 * 1000;
-      }).length
-    : 0;
+  // Calculate optimal review window based on actual review times
+  const calculateOptimalWindow = (): string => {
+    if (!recentReviews || recentReviews.length < 10) {
+      return 'morning (8:00-10:00 AM)';
+    }
+
+    // Count reviews by hour
+    const hourCounts: Record<number, number> = {};
+    recentReviews.forEach(review => {
+      const hour = new Date(review.reviewDate).getHours();
+      hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+    });
+
+    // Find the most active 2-hour window
+    let maxCount = 0;
+    let bestStartHour = 8; // default to morning
+
+    for (let hour = 0; hour < 24; hour++) {
+      const twoHourCount = (hourCounts[hour] || 0) + (hourCounts[hour + 1] || 0);
+      if (twoHourCount > maxCount) {
+        maxCount = twoHourCount;
+        bestStartHour = hour;
+      }
+    }
+
+    // Format the time range
+    const formatHour = (h: number) => {
+      const hour12 = h % 12 || 12;
+      const period = h < 12 ? 'AM' : 'PM';
+      return `${hour12}:00 ${period}`;
+    };
+
+    const startTime = formatHour(bestStartHour);
+    const endTime = formatHour(bestStartHour + 2);
+
+    // Return time of day description
+    if (bestStartHour >= 6 && bestStartHour < 12) {
+      return `morning (${startTime}-${endTime})`;
+    } else if (bestStartHour >= 12 && bestStartHour < 17) {
+      return `afternoon (${startTime}-${endTime})`;
+    } else if (bestStartHour >= 17 && bestStartHour < 21) {
+      return `evening (${startTime}-${endTime})`;
+    } else {
+      return `night (${startTime}-${endTime})`;
+    }
+  };
+
+  const optimalWindow = calculateOptimalWindow();
+
+  // New items created in last 7 days - use real backend value
+  const newItemsAdded = userAnalytics?.newItemsThisWeek ?? 0;
 
   const totalMemoryItems = userAnalytics?.totalMemoryItems ?? 0;
-  const masteredPercent = totalMemoryItems > 0 ? (masteryBreakdown.mastered / totalMemoryItems) * 100 : 0;
+  const masteredCards = userAnalytics?.masteredItems ?? 0;
+  const masteredPercent = totalMemoryItems > 0 ? (masteredCards / totalMemoryItems) * 100 : 0;
   const reviewingPercent = totalMemoryItems > 0 ? (masteryBreakdown.reviewing / totalMemoryItems) * 100 : 0;
   const learningPercent = totalMemoryItems > 0 ? (masteryBreakdown.learning / totalMemoryItems) * 100 : 0;
 
@@ -733,9 +780,9 @@ const Analytics: React.FC = () => {
                   </p>
                 </div>
                 <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-                  <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-1">Cards Matured</p>
+                  <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-1">Cards Mastered</p>
                   <p className="text-xl font-bold text-[#182442] font-manrope">
-                    {isLoading ? '...' : masteryBreakdown.mastered}
+                    {isLoading ? '...' : masteredCards}
                   </p>
                 </div>
               </div>
@@ -757,8 +804,8 @@ const Analytics: React.FC = () => {
             <h3 className="text-3xl font-bold mb-4 font-manrope">Cognitive Load is Optimal</h3>
             <p className="text-[16px] text-white/70 leading-relaxed font-inter">
               {currentStreak > 0 
-                ? `You are on a ${currentStreak}-day review streak! Based on your recent reviews, your optimal review window is between 08:00 and 10:00 AM.`
-                : 'Establish a daily review streak to optimize your cognitive window and recall rates.'}
+                ? `You're on a ${currentStreak}-day review streak! Based on your review history, your peak performance time is in the ${optimalWindow}.`
+                : 'Build a daily review streak to discover your optimal learning window and maximize retention.'}
             </p>
           </div>
           <div className="relative z-10 flex gap-12 mt-8 md:mt-0">
