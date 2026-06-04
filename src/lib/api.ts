@@ -101,9 +101,6 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
     (config.headers as Record<string, string>).Authorization = `Bearer ${token}`;
   }
 
-  const separator = config.url?.includes('?') ? '&' : '?';
-  config.url = `${config.url}${separator}_=${Date.now()}`;
-
   return config;
 });
 
