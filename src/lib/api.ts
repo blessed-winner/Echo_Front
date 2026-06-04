@@ -111,7 +111,7 @@ api.interceptors.response.use(
       if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
         try {
           response.data = JSON.parse(trimmed);
-        } catch (e) {
+        } catch (e){
           console.error('Failed to parse JSON response:', e);
         }
       }

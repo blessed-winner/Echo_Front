@@ -33,7 +33,7 @@ type ReviewRating = 'AGAIN' | 'HARD' | 'GOOD' | 'EASY';
 const ReviewSession: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { accessToken, isAuthLoading } = useUser();
+  const { accessToken, isAuthLoading, refreshSession } = useUser();
 
   const navigateBack = useCallback(() => {
     const from = (location.state as { from?: string } | null)?.from;
@@ -204,8 +204,37 @@ const ReviewSession: React.FC = () => {
         // Session complete - navigate back
         navigateBack();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to submit review:', error);
+
+      const status = error?.response?.status;
+      // If unauthorized, attempt an explicit refresh and retry once
+      if (status === 401) {
+        try {
+          console.log('[ReviewSession] 401 encountered, attempting session refresh...');
+          const refreshed = await refreshSession();
+          if (refreshed) {
+            console.log('[ReviewSession] Refresh succeeded, retrying review submit...');
+            await api.post(`/memories/${currentItem.id}/review`, {
+              rating,
+              timeSpentSeconds: timeSpent
+            });
+
+            setReviewedCount(prev => prev + 1);
+
+            if (currentIndex < totalItems - 1) {
+              setCurrentIndex(prev => prev + 1);
+              setShowAnswer(false);
+              setCardStartTime(Date.now());
+            } else {
+              navigateBack();
+            }
+            return;
+          }
+        } catch (retryErr) {
+          console.error('[ReviewSession] Retry after refresh failed:', retryErr);
+        }
+      }
     } finally {
       setIsSubmitting(false);
     }
