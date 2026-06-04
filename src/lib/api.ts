@@ -122,6 +122,14 @@ api.interceptors.response.use(
     const status = error.response?.status;
     const originalRequest = error.config;
 
+    console.error('[API] Request failed', {
+      method: originalRequest?.method,
+      url: originalRequest?.url,
+      status,
+      message: error.message,
+      responseData: error.response?.data,
+    });
+
     if (
       status === 401 &&
       originalRequest &&

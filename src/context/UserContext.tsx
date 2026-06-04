@@ -152,8 +152,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setAccessToken(response.data.accessToken);
       await hydrateUser();
       return true;
-    } catch (error) {
-      // Don't clear tokens on refresh failure - user might just be offline
+    } catch (error: any) {
+      if (error?.response?.status === 401) {
+        clearStoredAccessToken();
+        setAccessToken(null);
+        setIsAuthenticated(false);
+      }
       setIsAuthLoading(false);
       return false;
     }
