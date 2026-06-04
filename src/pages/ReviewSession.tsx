@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '../context/UserContext';
 import { api } from '../lib/api';
 import { Loader2 } from 'lucide-react';
-import { eventBus, EVENTS } from '../lib/events';
 
 interface TagDto {
   id: number;
@@ -53,7 +52,7 @@ const ReviewSession: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [dueItems, setDueItems] = useState<MemoryItemDto[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [sessionStartTime, setSessionStartTime] = useState<number>(Date.now());
+  const [sessionStartTime] = useState<number>(Date.now());
   const [cardStartTime, setCardStartTime] = useState<number>(Date.now());
   const [reviewedCount, setReviewedCount] = useState(0);
   const [currentStreak, setCurrentStreak] = useState(0);

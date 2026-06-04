@@ -6,7 +6,6 @@ import { cn, getDisplayLastName } from '../lib/utils';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
 import { api } from '../lib/api';
-import { eventBus, EVENTS } from '../lib/events';
 
 interface UserAnalyticsDto {
   totalNotes: number;

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MoreHorizontal, Clock, Trash2, Calendar, CalendarClock } from 'lucide-react';
-import { cn } from '../lib/utils';
+import { cn, stripHtml } from '../lib/utils';
 
 interface ReviewCardProps {
   id: number;
@@ -112,10 +112,10 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
       
       <div className="flex-1">
         <h4 className="font-bold text-text-primary text-lg leading-tight mb-2 group-hover:text-[#182442] transition-colors line-clamp-2">
-          {title}
+          {stripHtml(title)}
         </h4>
         <p style={{ fontFamily: "'DM Sans', ui-sans-serif, system-ui, sans-serif" }} className="text-text-secondary text-sm italic font-medium">
-          Deck: {deck}
+          Deck: {stripHtml(deck)}
         </p>
       </div>
       

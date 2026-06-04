@@ -3,7 +3,6 @@ import { useLocation } from 'react-router-dom';
 import { buildHeatmapCells, cn, getHeatmapWeekCount, HEATMAP_LEGEND_COLORS } from '../lib/utils';
 import { api } from '../lib/api';
 import { useUser } from '../context/UserContext';
-import { eventBus, EVENTS } from '../lib/events';
 
 interface UserAnalyticsDto {
   totalNotes: number;
@@ -86,7 +85,6 @@ const Analytics: React.FC = () => {
   const [adminAnalytics, setAdminAnalytics] = useState<AdminSystemAnalyticsDto | null>(null);
   const [memoryStats, setMemoryStats] = useState<MemoryStatsDto | null>(null);
   const [recentReviews, setRecentReviews] = useState<ReviewDto[]>([]);
-  const [memoryItems, setMemoryItems] = useState<MemoryItemDto[]>([]);
   const [masteryBreakdown, setMasteryBreakdown] = useState({ mastered: 0, reviewing: 0, learning: 0 });
 
   useEffect(() => {
@@ -146,7 +144,6 @@ const Analytics: React.FC = () => {
         setUserAnalytics(uAnalytics);
         setMemoryStats(mStats);
         setRecentReviews(rReviews);
-        setMemoryItems(mItems);
         if (aAnalytics) {
           setAdminAnalytics(aAnalytics);
         }

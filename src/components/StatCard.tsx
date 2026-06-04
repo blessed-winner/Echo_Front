@@ -4,7 +4,6 @@ import { cn, TOPIC_AVATAR_COLORS } from '../lib/utils';
 interface StatCardProps {
   title: string;
   value: string | number;
-  subtitle?: string;
   icon?: string;
   progress?: number;
   className?: string;
@@ -14,7 +13,6 @@ interface StatCardProps {
 export const StatCard: React.FC<StatCardProps> = ({ 
   title, 
   value, 
-  subtitle, 
   icon, 
   progress, 
   className,
