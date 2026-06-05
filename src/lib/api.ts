@@ -21,27 +21,17 @@ export const api: AxiosInstance = axios.create({
   withCredentials: true,
 });
 
-// Single request interceptor: attach auth header AND log in one pass.
-// Previously two separate interceptors were registered, and Axios executes
-// them in reverse-registration order, meaning the logger ran before the
-// auth header was set — so `hasToken` in the log was always stale and, more
-// critically, the Authorization header could be missing on the first tick.
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const token = getStoredAccessToken();
-
+  
   if (token) {
     config.headers = config.headers ?? ({} as InternalAxiosRequestConfig['headers']);
     (config.headers as Record<string, string>).Authorization = `Bearer ${token}`;
   }
 
-  // Prevent browser caching by adding a unique parameter to every request
-  const separator = config.url?.includes('?') ? '&' : '?';
-  config.url = `${config.url}${separator}_=${Date.now()}`;
-
   return config;
 });
 
-// Response interceptor
 api.interceptors.response.use(
   (response) => response,
   (error) => Promise.reject(error)
