@@ -57,10 +57,16 @@ const ReviewSession: React.FC = () => {
   const [reviewedCount, setReviewedCount] = useState(0);
   const [currentStreak, setCurrentStreak] = useState(0);
   const [reviewIntervals, setReviewIntervals] = useState<{againDays: number; hardDays: number; goodDays: number; easyDays: number} | null>(null);
+  const [showNoteModal, setShowNoteModal] = useState(false);
+  const [noteContent, setNoteContent] = useState<string | null>(null);
+  const [loadingNote, setLoadingNote] = useState(false);
 
   const currentItem = (dueItems && dueItems.length > 0) ? dueItems[currentIndex] : null;
   const totalItems = dueItems ? dueItems.length : 0;
   const progressPercent = totalItems > 0 ? Math.round((reviewedCount / totalItems) * 100) : 0;
+
+  // Remove <u></u> tags from source
+  const cleanSource = currentItem?.source ? currentItem.source.replace(/<\/?u>/g, '') : 'Review Session';
 
   // Format interval for display
   const formatInterval = (days: number): string => {
@@ -73,6 +79,25 @@ const ReviewSession: React.FC = () => {
     }
     const years = Math.round(days / 365);
     return `${years}y`;
+  };
+
+  // Fetch and view full note
+  const handleViewNote = async () => {
+    if (!currentItem) return;
+    
+    setLoadingNote(true);
+    setShowNoteModal(true);
+    
+    try {
+      // Fetch the note content from the memory item's noteId if available
+      // For now, we'll show the full front/back content
+      setNoteContent(`**Front:**\n${currentItem.front}\n\n**Back:**\n${currentItem.back}`);
+    } catch (error) {
+      console.error('Failed to load note:', error);
+      setNoteContent('Failed to load note content.');
+    } finally {
+      setLoadingNote(false);
+    }
   };
 
   // Fetch intervals for current item
@@ -362,9 +387,21 @@ const ReviewSession: React.FC = () => {
         <div className="max-w-[720px] w-full mb-12 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div>
-              <h2 className="text-2xl font-bold text-[#182442] leading-none font-manrope">
-                {currentItem?.source || 'Review Session'}
-              </h2>
+              <div className="flex items-center gap-3">
+                <h2 className="text-2xl font-bold text-[#182442] leading-none font-manrope">
+                  {cleanSource}
+                </h2>
+                {currentItem && (
+                  <button
+                    onClick={handleViewNote}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-all group"
+                    title="View full note"
+                  >
+                    <span className="material-symbols-outlined text-slate-500 !text-[16px] group-hover:text-[#182442] transition-colors">description</span>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest group-hover:text-[#182442] transition-colors">View Note</span>
+                  </button>
+                )}
+              </div>
               <p className="text-sm text-[#45464e] mt-1">
                 {currentItem?.tags?.[0]?.name || 'Memory Item'}
               </p>
@@ -529,6 +566,71 @@ const ReviewSession: React.FC = () => {
         <div className="absolute top-0 right-0 w-[50vw] h-[50vw] bg-[#dae2ff] opacity-[0.05] rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
         <div className="absolute bottom-0 left-0 w-[40vw] h-[40vw] bg-[#bbead0] opacity-[0.05] rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
       </div>
+
+      {/* Note Modal */}
+      <AnimatePresence>
+        {showNoteModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-6"
+            onClick={() => setShowNoteModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between p-6 border-b border-slate-200">
+                <div>
+                  <h3 className="text-xl font-bold text-[#182442] font-manrope">
+                    {cleanSource}
+                  </h3>
+                  <p className="text-sm text-slate-500 mt-1">
+                    {currentItem?.tags?.[0]?.name || 'Memory Item'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowNoteModal(false)}
+                  className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-100 transition-all group"
+                >
+                  <span className="material-symbols-outlined text-slate-400 group-hover:text-slate-600 group-hover:rotate-90 transition-all">close</span>
+                </button>
+              </div>
+              <div className="p-8 overflow-y-auto max-h-[calc(80vh-100px)]">
+                {loadingNote ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="w-6 h-6 animate-spin text-indigo-600" />
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    <div>
+                      <div className="inline-block px-3 py-1 bg-[#dae2ff] text-[#182442] text-[10px] font-bold uppercase tracking-widest rounded-full mb-3">
+                        Front
+                      </div>
+                      <p className="text-lg text-[#182442] leading-relaxed whitespace-pre-wrap">
+                        {currentItem?.front}
+                      </p>
+                    </div>
+                    <div className="border-t border-slate-200 pt-6">
+                      <div className="inline-block px-3 py-1 bg-[#ecfdf5] text-[#3c6752] text-[10px] font-bold uppercase tracking-widest rounded-full mb-3">
+                        Back
+                      </div>
+                      <p className="text-lg text-[#45464e] leading-relaxed whitespace-pre-wrap">
+                        {currentItem?.back}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
