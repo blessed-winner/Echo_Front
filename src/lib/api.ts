@@ -34,33 +34,17 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
     (config.headers as Record<string, string>).Authorization = `Bearer ${token}`;
   }
 
-  console.log('[API] Request ->', {
-    method: config.method,
-    url: config.url,
-    params: config.params,
-    hasToken: !!token, // now accurate: token applied before this log
-  });
+  // Prevent browser caching by adding a unique parameter to every request
+  const separator = config.url?.includes('?') ? '&' : '?';
+  config.url = `${config.url}${separator}_=${Date.now()}`;
 
   return config;
 });
 
-// Response interceptor: log successes and surface errors clearly.
+// Response interceptor
 api.interceptors.response.use(
-  (response) => {
-    console.log('[API] Response <-', {
-      url: response.config?.url,
-      status: response.status,
-    });
-    return response;
-  },
-  (error) => {
-    console.error('[API] Response Error <-', {
-      url: error.config?.url,
-      status: error.response?.status,
-      data: error.response?.data,
-    });
-    return Promise.reject(error);
-  }
+  (response) => response,
+  (error) => Promise.reject(error)
 );
 
 export const oauthUrl = (provider: 'google' | 'github') =>
