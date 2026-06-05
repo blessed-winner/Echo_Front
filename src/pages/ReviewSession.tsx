@@ -21,6 +21,16 @@ interface MemoryItemDto {
   reviewCount: number;
   due: boolean;
   tags: TagDto[] | null;
+  noteId: number | null;
+}
+
+interface NoteDto {
+  id: number;
+  title: string;
+  content: string;
+  createdAt: string;
+  topic: TopicDto | null;
+  tags: TagDto[] | null;
 }
 
 interface PageResponse<T> {
@@ -58,7 +68,7 @@ const ReviewSession: React.FC = () => {
   const [currentStreak, setCurrentStreak] = useState(0);
   const [reviewIntervals, setReviewIntervals] = useState<{againDays: number; hardDays: number; goodDays: number; easyDays: number} | null>(null);
   const [showNoteModal, setShowNoteModal] = useState(false);
-  const [noteContent, setNoteContent] = useState<string | null>(null);
+  const [currentNote, setCurrentNote] = useState<NoteDto | null>(null);
   const [loadingNote, setLoadingNote] = useState(false);
 
   const currentItem = (dueItems && dueItems.length > 0) ? dueItems[currentIndex] : null;
@@ -83,18 +93,21 @@ const ReviewSession: React.FC = () => {
 
   // Fetch and view full note
   const handleViewNote = async () => {
-    if (!currentItem) return;
+    if (!currentItem || !currentItem.noteId) {
+      alert('This memory item is not linked to a note.');
+      return;
+    }
     
     setLoadingNote(true);
     setShowNoteModal(true);
     
     try {
-      // Fetch the note content from the memory item's noteId if available
-      // For now, we'll show the full front/back content
-      setNoteContent(`**Front:**\n${currentItem.front}\n\n**Back:**\n${currentItem.back}`);
+      const response = await api.get<NoteDto>(`/notes/${currentItem.noteId}`);
+      setCurrentNote(response.data);
     } catch (error) {
       console.error('Failed to load note:', error);
-      setNoteContent('Failed to load note content.');
+      alert('Failed to load note content.');
+      setShowNoteModal(false);
     } finally {
       setLoadingNote(false);
     }
@@ -588,10 +601,10 @@ const ReviewSession: React.FC = () => {
               <div className="flex items-center justify-between p-6 border-b border-slate-200">
                 <div>
                   <h3 className="text-xl font-bold text-[#182442] font-manrope">
-                    {cleanSource}
+                    {currentNote?.title || 'Note'}
                   </h3>
                   <p className="text-sm text-slate-500 mt-1">
-                    {currentItem?.tags?.[0]?.name || 'Memory Item'}
+                    {currentNote?.topic?.name || currentItem?.tags?.[0]?.name || 'Memory Item'}
                   </p>
                 </div>
                 <button
@@ -606,24 +619,27 @@ const ReviewSession: React.FC = () => {
                   <div className="flex items-center justify-center py-12">
                     <Loader2 className="w-6 h-6 animate-spin text-indigo-600" />
                   </div>
+                ) : currentNote ? (
+                  <div className="prose prose-slate max-w-none">
+                    <div className="text-base text-[#45464e] leading-relaxed whitespace-pre-wrap">
+                      {currentNote.content}
+                    </div>
+                    {currentNote.tags && currentNote.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-6 pt-6 border-t border-slate-200">
+                        {currentNote.tags.map((tag) => (
+                          <span
+                            key={tag.id}
+                            className="px-3 py-1 bg-slate-100 text-slate-600 text-xs font-bold rounded-full"
+                          >
+                            {tag.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 ) : (
-                  <div className="space-y-6">
-                    <div>
-                      <div className="inline-block px-3 py-1 bg-[#dae2ff] text-[#182442] text-[10px] font-bold uppercase tracking-widest rounded-full mb-3">
-                        Front
-                      </div>
-                      <p className="text-lg text-[#182442] leading-relaxed whitespace-pre-wrap">
-                        {currentItem?.front}
-                      </p>
-                    </div>
-                    <div className="border-t border-slate-200 pt-6">
-                      <div className="inline-block px-3 py-1 bg-[#ecfdf5] text-[#3c6752] text-[10px] font-bold uppercase tracking-widest rounded-full mb-3">
-                        Back
-                      </div>
-                      <p className="text-lg text-[#45464e] leading-relaxed whitespace-pre-wrap">
-                        {currentItem?.back}
-                      </p>
-                    </div>
+                  <div className="text-center py-12">
+                    <p className="text-slate-500">No note content available.</p>
                   </div>
                 )}
               </div>

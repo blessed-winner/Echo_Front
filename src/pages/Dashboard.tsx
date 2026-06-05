@@ -187,16 +187,13 @@ const Dashboard: React.FC = () => {
   // and the race condition that came with it.
   const loadDashboard = useCallback(async () => {
     if (isAuthLoading || !accessToken) {
-      console.log('⚠️ Cannot load dashboard - no auth token:', { isAuthLoading, hasToken: !!accessToken });
       setIsLoading(false);
       return;
     }
 
-    console.log('✅ Loading dashboard with token:', accessToken?.substring(0, 20) + '...');
     setIsLoading(true);
 
     try {
-      console.log('📡 Starting API calls...');
       const [
         analyticsResult,
         reviewSummaryResult,
@@ -212,35 +209,6 @@ const Dashboard: React.FC = () => {
         api.get<PageResponse<TopicDto>>('/topics?page=0&size=3'),
         api.get<PageResponse<ReviewDto>>('/reviews/recent?limit=500'),
       ]);
-
-      console.log('📊 API Results:', {
-        analytics: analyticsResult.status,
-        reviewSummary: reviewSummaryResult.status,
-        memoryStats: memoryStatsResult.status,
-        dueItems: dueItemsResult.status,
-        topics: topicsResult.status,
-        recentReviews: recentReviewsResult.status,
-      });
-
-      // Log any failures with details
-      if (analyticsResult.status === 'rejected') {
-        console.error('❌ Analytics failed:', analyticsResult.reason?.response?.status, analyticsResult.reason?.message, analyticsResult.reason);
-      }
-      if (reviewSummaryResult.status === 'rejected') {
-        console.error('❌ Review summary failed:', reviewSummaryResult.reason?.response?.status, reviewSummaryResult.reason?.message, reviewSummaryResult.reason);
-      }
-      if (memoryStatsResult.status === 'rejected') {
-        console.error('❌ Memory stats failed:', memoryStatsResult.reason?.response?.status, memoryStatsResult.reason?.message, memoryStatsResult.reason);
-      }
-      if (dueItemsResult.status === 'rejected') {
-        console.error('❌ Due items failed:', dueItemsResult.reason?.response?.status, dueItemsResult.reason?.message, dueItemsResult.reason);
-      }
-      if (topicsResult.status === 'rejected') {
-        console.error('❌ Topics failed:', topicsResult.reason?.response?.status, topicsResult.reason?.message, topicsResult.reason);
-      }
-      if (recentReviewsResult.status === 'rejected') {
-        console.error('❌ Recent reviews failed:', recentReviewsResult.reason?.response?.status, recentReviewsResult.reason?.message, recentReviewsResult.reason);
-      }
 
       const analytics =
         analyticsResult.status === 'fulfilled' && analyticsResult.value?.data
