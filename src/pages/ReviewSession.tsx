@@ -621,9 +621,10 @@ const ReviewSession: React.FC = () => {
                   </div>
                 ) : currentNote ? (
                   <div className="prose prose-slate max-w-none">
-                    <div className="text-base text-[#45464e] leading-relaxed whitespace-pre-wrap">
-                      {currentNote.content}
-                    </div>
+                    <div 
+                      className="text-base text-[#45464e] leading-relaxed"
+                      dangerouslySetInnerHTML={{ __html: currentNote.content }}
+                    />
                     {currentNote.tags && currentNote.tags.length > 0 && (
                       <div className="flex flex-wrap gap-2 mt-6 pt-6 border-t border-slate-200">
                         {currentNote.tags.map((tag) => (
