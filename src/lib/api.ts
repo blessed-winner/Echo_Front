@@ -101,8 +101,8 @@ api.interceptors.response.use(
         clearStoredAccessToken();
         
         // Redirect to login
-        if (window.location.pathname !== '/auth/login') {
-          window.location.href = '/auth/login';
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
         }
         
         return Promise.reject(refreshError);

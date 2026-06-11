@@ -18,7 +18,8 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(state?.message ?? null);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(state?.message ?? null);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [progress, setProgress] = useState(0);
 
@@ -92,6 +93,7 @@ const Login: React.FC = () => {
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
+    setSuccessMessage(null);
     setIsSubmitting(true);
 
     try {
@@ -196,9 +198,17 @@ const Login: React.FC = () => {
             <p className="text-on-surface-variant">Please enter your details to sign in to your account.</p>
           </div>
 
+          {successMessage && (
+            <div className="mb-6 rounded-xl bg-[#182442] px-4 py-3 text-sm text-white flex items-start gap-3">
+              <span className="material-symbols-outlined !text-[18px] mt-0.5">check_circle</span>
+              <span>{successMessage}</span>
+            </div>
+          )}
+
           {error && (
-            <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {error}
+            <div className="mb-6 rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-slate-700 flex items-start gap-3">
+              <span className="material-symbols-outlined !text-[18px] text-slate-400 mt-0.5">info</span>
+              <span>{error}</span>
             </div>
           )}
 

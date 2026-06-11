@@ -13,13 +13,14 @@ import NewNote from './pages/NewNote';
 import Analytics from './pages/Analytics';
 import LandingPage from './pages/LandingPage';
 import AuthSuccess from './pages/AuthSuccess';
+import VerifyEmail from './pages/VerifyEmail';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useUser } from './context/UserContext';
 
 const AppContent = () => {
   const location = useLocation();
   const { isAuthenticated, isAuthLoading } = useUser();
-  const isAuthPage = location.pathname === '/login' || location.pathname === '/signup' || location.pathname === '/auth/success';
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/signup' || location.pathname.startsWith('/auth/');
   const isReviewPage = location.pathname === '/review';
   const isLandingPage = location.pathname === '/';
   const showLayout = !isAuthPage && !isReviewPage && !isLandingPage;
@@ -50,14 +51,15 @@ const AppContent = () => {
         <main className={showLayout ? "pt-16 pb-2" : ""}>
           <Routes>
             <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<SignUp />} />
+            <Route path="/auth/verify" element={<VerifyEmail />} />
+            <Route path="/auth/success" element={<AuthSuccess />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/library" element={<Library />} />
             <Route path="/new" element={<NewNote />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/settings" element={<Settings />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<SignUp />} />
-            <Route path="/auth/success" element={<AuthSuccess />} />
             <Route path="/review" element={<ReviewSession />} />
             <Route path="*" element={<LandingPage />} />
           </Routes>
