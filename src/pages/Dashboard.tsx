@@ -6,6 +6,7 @@ import { cn, getDisplayLastName } from '../lib/utils';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
 import { api } from '../lib/api';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface UserAnalyticsDto {
   totalNotes: number;
@@ -239,7 +240,7 @@ const Dashboard: React.FC = () => {
         api.get<UserAnalyticsDto>('/analytics/me'),
         api.get<ReviewSummaryDto>('/reviews/summary'),
         api.get<MemoryStatsDto>('/memories/stats'),
-        api.get<PageResponse<MemoryItemDto>>('/memories/due?limit=3'),
+        api.get<PageResponse<MemoryItemDto>>('/memories/due?limit=50'),
         api.get<PageResponse<TopicDto>>('/topics?page=0&size=3'),
         api.get<PageResponse<ReviewDto>>('/reviews/recent?limit=500'),
       ]);
@@ -624,36 +625,86 @@ const Dashboard: React.FC = () => {
           </div>
         ) : reviewCards.length > 0 ? (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter">
-              {reviewCards.slice(reviewCardPage, reviewCardPage + 3).map((card, index) => (
-                <ReviewCard
-                  key={`${card.id}-${index}`}
-                  id={card.id}
-                  priority={card.priority}
-                  title={card.title}
-                  deck={card.deck}
-                  due={card.due}
-                  type={card.type}
-                  onDelete={handleDeleteMemoryItem}
-                  onReschedule={handleRescheduleMemoryItem}
-                />
-              ))}
-            </div>
-            
-            {/* View More Link */}
-            {reviewCards.length >= 3 && reviewCardPage + 3 < reviewCards.length && (
-              <div className="flex justify-center pt-4">
-                <button
-                  onClick={() => setReviewCardPage(reviewCardPage + 1)}
-                  className="text-[#182442] hover:text-indigo-600 text-sm font-semibold transition-colors flex items-center gap-1 group"
-                >
-                  View More ({reviewCards.length - (reviewCardPage + 3)} remaining)
-                  <span className="material-symbols-outlined !text-[16px] group-hover:translate-y-0.5 transition-transform">
-                    expand_more
-                  </span>
-                </button>
+            <div className="relative">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+                <AnimatePresence mode="popLayout">
+                  {reviewCards.slice(reviewCardPage, reviewCardPage + 3).map((card) => (
+                    <motion.div
+                      key={card.id}
+                      layout
+                      initial={{ opacity: 0, x: 50 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -50 }}
+                      transition={{ duration: 0.3, ease: "easeInOut" }}
+                    >
+                      <ReviewCard
+                        id={card.id}
+                        priority={card.priority}
+                        title={card.title}
+                        deck={card.deck}
+                        due={card.due}
+                        type={card.type}
+                        onDelete={handleDeleteMemoryItem}
+                        onReschedule={handleRescheduleMemoryItem}
+                      />
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
               </div>
-            )}
+              
+              {/* Carousel Navigation */}
+              {reviewCards.length > 3 && (
+                <div className="flex justify-center items-center gap-3 mt-6">
+                  <button
+                    onClick={() => setReviewCardPage(Math.max(0, reviewCardPage - 1))}
+                    disabled={reviewCardPage === 0}
+                    className={cn(
+                      "w-9 h-9 rounded-full flex items-center justify-center transition-all",
+                      reviewCardPage === 0
+                        ? "bg-slate-100 text-slate-300 cursor-not-allowed"
+                        : "bg-white border border-slate-200 text-[#182442] hover:border-[#182442] hover:shadow-md active:scale-95 shadow-sm"
+                    )}
+                    aria-label="Previous cards"
+                  >
+                    <span className="material-symbols-outlined !text-[20px]">chevron_left</span>
+                  </button>
+                  
+                  <div className="flex items-center gap-1.5">
+                    {Array.from({ length: Math.ceil(reviewCards.length / 3) }, (_, i) => {
+                      const pageIndex = i * 3;
+                      const isActive = reviewCardPage >= pageIndex && reviewCardPage < pageIndex + 3;
+                      return (
+                        <button
+                          key={i}
+                          onClick={() => setReviewCardPage(pageIndex)}
+                          className={cn(
+                            "h-1.5 rounded-full transition-all",
+                            isActive
+                              ? "w-8 bg-[#182442]"
+                              : "w-1.5 bg-slate-300 hover:bg-slate-400"
+                          )}
+                          aria-label={`Go to page ${i + 1}`}
+                        />
+                      );
+                    })}
+                  </div>
+                  
+                  <button
+                    onClick={() => setReviewCardPage(reviewCardPage + 1)}
+                    disabled={reviewCardPage + 3 >= reviewCards.length}
+                    className={cn(
+                      "w-9 h-9 rounded-full flex items-center justify-center transition-all",
+                      reviewCardPage + 3 >= reviewCards.length
+                        ? "bg-slate-100 text-slate-300 cursor-not-allowed"
+                        : "bg-white border border-slate-200 text-[#182442] hover:border-[#182442] hover:shadow-md active:scale-95 shadow-sm"
+                    )}
+                    aria-label="Next cards"
+                  >
+                    <span className="material-symbols-outlined !text-[20px]">chevron_right</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </>
         ) : (
           <div className="echo-card p-12 text-center">
