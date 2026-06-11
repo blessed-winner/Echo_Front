@@ -641,13 +641,13 @@ const Dashboard: React.FC = () => {
             </div>
             
             {/* View More Link */}
-            {reviewCards.length > 3 && reviewCardPage + 3 < reviewCards.length && (
+            {reviewCards.length >= 3 && reviewCardPage + 3 < reviewCards.length && (
               <div className="flex justify-center pt-4">
                 <button
                   onClick={() => setReviewCardPage(reviewCardPage + 1)}
                   className="text-[#182442] hover:text-indigo-600 text-sm font-semibold transition-colors flex items-center gap-1 group"
                 >
-                  View More
+                  View More ({reviewCards.length - (reviewCardPage + 3)} remaining)
                   <span className="material-symbols-outlined !text-[16px] group-hover:translate-y-0.5 transition-transform">
                     expand_more
                   </span>
