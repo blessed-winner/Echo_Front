@@ -10,12 +10,7 @@ const SignUp: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [passwordStrength, setPasswordStrength] = useState({ 
-    hasMinLength: false, 
-    hasUppercase: false, 
-    hasLowercase: false, 
-    hasNumber: false 
-  });
+  const [showPasswordError, setShowPasswordError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -69,14 +64,6 @@ const SignUp: React.FC = () => {
     event.preventDefault();
     setError(null);
     setSuccess(null);
-
-    // Validate password requirements
-    if (!passwordStrength.hasMinLength || !passwordStrength.hasUppercase || 
-        !passwordStrength.hasLowercase || !passwordStrength.hasNumber) {
-      setError('Password must contain at least 8 characters, one uppercase, one lowercase, and one number');
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
@@ -96,19 +83,14 @@ const SignUp: React.FC = () => {
     }
   };
 
-  // Update password strength as user types
+  // Show password length error as user types
   const handlePasswordChange = (value: string) => {
     setPassword(value);
-    setPasswordStrength({
-      hasMinLength: value.length >= 8,
-      hasUppercase: /[A-Z]/.test(value),
-      hasLowercase: /[a-z]/.test(value),
-      hasNumber: /\d/.test(value)
-    });
+    setShowPasswordError(value.length > 0 && value.length < 8);
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen max-h-screen overflow-hidden bg-background">
       {/* Branding & Visual Sidebar (Desktop only) */}
       <div className="hidden lg:flex lg:w-1/2 relative bg-[#182442] overflow-hidden items-center justify-center p-12">
         {/* Abstract Background for Visual Interest */}
@@ -213,27 +195,29 @@ const SignUp: React.FC = () => {
       </div>
 
       {/* Sign Up Form Section */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center bg-surface px-8 animate-in slide-in-from-right-8 duration-700 overflow-hidden">
-        <div className="w-full max-w-[440px]">
-          <div className="mb-10">
+      <div className="w-full lg:w-1/2 flex items-center justify-center bg-surface px-8 animate-in slide-in-from-right-8 duration-700 overflow-y-auto">
+        <div className="w-full max-w-[440px] py-8">
+          <div className="mb-8">
             <h1 className="text-4xl font-bold text-on-surface mb-3 font-manrope">Create your account</h1>
             <p className="text-on-surface-variant">Join a community of lifelong learners and professionals.</p>
           </div>
 
           {error && (
-            <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {error}
+            <div className="mb-4 rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-slate-700 flex items-start gap-3">
+              <span className="material-symbols-outlined !text-[18px] text-slate-400 mt-0.5">info</span>
+              <span>{error}</span>
             </div>
           )}
 
           {success && (
-            <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-[#3c6752]">
-              {success}
+            <div className="mb-4 rounded-xl bg-[#182442] px-4 py-3 text-sm text-white flex items-start gap-3">
+              <span className="material-symbols-outlined !text-[18px] mt-0.5">check_circle</span>
+              <span>{success}</span>
             </div>
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {/* Full Name */}
             <div className="space-y-2">
               <label className="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant" htmlFor="name">Full Name</label>
@@ -278,7 +262,7 @@ const SignUp: React.FC = () => {
                 <input
                   className="w-full px-4 py-3.5 pl-12 pr-12 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none bg-white text-sm transition-all placeholder:text-slate-400"
                   id="password"
-                  placeholder="Create a strong password"
+                  placeholder="Min. 8 characters"
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(event) => handlePasswordChange(event.target.value)}
@@ -293,43 +277,8 @@ const SignUp: React.FC = () => {
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
-              
-              {/* Password Requirements */}
-              {password && (
-                <div className="mt-3 space-y-1.5 px-1">
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className={`material-symbols-outlined !text-[14px] ${passwordStrength.hasMinLength ? 'text-emerald-600' : 'text-slate-300'}`}>
-                      {passwordStrength.hasMinLength ? 'check_circle' : 'cancel'}
-                    </span>
-                    <span className={passwordStrength.hasMinLength ? 'text-emerald-600 font-medium' : 'text-slate-400'}>
-                      At least 8 characters
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className={`material-symbols-outlined !text-[14px] ${passwordStrength.hasUppercase ? 'text-emerald-600' : 'text-slate-300'}`}>
-                      {passwordStrength.hasUppercase ? 'check_circle' : 'cancel'}
-                    </span>
-                    <span className={passwordStrength.hasUppercase ? 'text-emerald-600 font-medium' : 'text-slate-400'}>
-                      One uppercase letter
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className={`material-symbols-outlined !text-[14px] ${passwordStrength.hasLowercase ? 'text-emerald-600' : 'text-slate-300'}`}>
-                      {passwordStrength.hasLowercase ? 'check_circle' : 'cancel'}
-                    </span>
-                    <span className={passwordStrength.hasLowercase ? 'text-emerald-600 font-medium' : 'text-slate-400'}>
-                      One lowercase letter
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className={`material-symbols-outlined !text-[14px] ${passwordStrength.hasNumber ? 'text-emerald-600' : 'text-slate-300'}`}>
-                      {passwordStrength.hasNumber ? 'check_circle' : 'cancel'}
-                    </span>
-                    <span className={passwordStrength.hasNumber ? 'text-emerald-600 font-medium' : 'text-slate-400'}>
-                      One number
-                    </span>
-                  </div>
-                </div>
+              {showPasswordError && (
+                <p className="text-[10px] text-red-500 mt-1">Password must be at least 8 characters</p>
               )}
             </div>
 
@@ -346,14 +295,6 @@ const SignUp: React.FC = () => {
               </label>
             </div>
 
-            {/* Verification Note */}
-            <div className="flex items-center gap-3 p-4 bg-emerald-50 rounded-xl border border-emerald-100">
-              <span className="material-symbols-outlined text-[#3c6752] !text-[20px]">info</span>
-              <p className="text-xs text-[#3c6752] font-medium leading-tight">
-                We'll send a verification link to your email to activate your account.
-              </p>
-            </div>
-
             <button
               className="w-full py-4 bg-[#182442] text-white rounded-xl font-bold hover:opacity-90 transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-70"
               type="submit"
@@ -364,7 +305,7 @@ const SignUp: React.FC = () => {
             </button>
           </form>
 
-          <div className="mt-8 text-center pt-8 border-t border-slate-100">
+          <div className="mt-6 text-center pt-6 border-t border-slate-100">
             <p className="text-sm text-on-surface-variant">
               Already have an account?
               <Link className="text-primary font-bold hover:underline ml-1" to="/login">Log in</Link>
