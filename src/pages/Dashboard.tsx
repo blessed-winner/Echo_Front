@@ -209,6 +209,7 @@ const Dashboard: React.FC = () => {
   const [dueCount, setDueCount] = useState(0);
   const [currentStreak, setCurrentStreak] = useState(0);
   const [reviewCards, setReviewCards] = useState<DashboardReviewCard[]>([]);
+  const [reviewCardPage, setReviewCardPage] = useState(0);
   const [weeklyGraphData, setWeeklyGraphData] = useState<number[]>([0, 0, 0, 0, 0, 0, 0]);
   const [weeklyRetentionRates, setWeeklyRetentionRates] = useState<number[]>([0, 0, 0, 0, 0, 0, 0]);
   const [todayGraphIndex, setTodayGraphIndex] = useState<number>(-1);
@@ -616,21 +617,60 @@ const Dashboard: React.FC = () => {
             ))}
           </div>
         ) : reviewCards.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter">
-            {reviewCards.map((card, index) => (
-              <ReviewCard
-                key={`${card.id}-${index}`}
-                id={card.id}
-                priority={card.priority}
-                title={card.title}
-                deck={card.deck}
-                due={card.due}
-                type={card.type}
-                onDelete={handleDeleteMemoryItem}
-                onReschedule={handleRescheduleMemoryItem}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+              {reviewCards.slice(reviewCardPage * 3, (reviewCardPage + 1) * 3).map((card, index) => (
+                <ReviewCard
+                  key={`${card.id}-${index}`}
+                  id={card.id}
+                  priority={card.priority}
+                  title={card.title}
+                  deck={card.deck}
+                  due={card.due}
+                  type={card.type}
+                  onDelete={handleDeleteMemoryItem}
+                  onReschedule={handleRescheduleMemoryItem}
+                />
+              ))}
+            </div>
+            
+            {/* Pagination Controls */}
+            {reviewCards.length > 3 && (
+              <div className="flex justify-between items-center pt-6">
+                <button
+                  onClick={() => setReviewCardPage(Math.max(0, reviewCardPage - 1))}
+                  disabled={reviewCardPage === 0}
+                  className={cn(
+                    "px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2",
+                    reviewCardPage === 0
+                      ? "text-slate-300 cursor-not-allowed"
+                      : "text-[#182442] hover:bg-slate-50 active:scale-95"
+                  )}
+                >
+                  <span className="material-symbols-outlined !text-[18px]">chevron_left</span>
+                  Previous
+                </button>
+                
+                <span className="text-sm text-slate-500 font-medium">
+                  {reviewCardPage * 3 + 1}-{Math.min((reviewCardPage + 1) * 3, reviewCards.length)} of {reviewCards.length}
+                </span>
+                
+                <button
+                  onClick={() => setReviewCardPage(reviewCardPage + 1)}
+                  disabled={(reviewCardPage + 1) * 3 >= reviewCards.length}
+                  className={cn(
+                    "px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2",
+                    (reviewCardPage + 1) * 3 >= reviewCards.length
+                      ? "text-slate-300 cursor-not-allowed"
+                      : "text-[#182442] hover:bg-slate-50 active:scale-95"
+                  )}
+                >
+                  Next
+                  <span className="material-symbols-outlined !text-[18px]">chevron_right</span>
+                </button>
+              </div>
+            )}
+          </>
         ) : (
           <div className="echo-card p-12 text-center">
             <div className="flex flex-col items-center gap-4">

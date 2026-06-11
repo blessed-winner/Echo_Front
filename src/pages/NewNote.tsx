@@ -51,7 +51,8 @@ const NewNote: React.FC = () => {
   const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
   const [selectedTagIds, setSelectedTagIds] = useState<Set<number>>(new Set());
   const [memoryItems, setMemoryItems] = useState<MemoryItemDto[]>([]);
-  const [showAllMemoryItems, setShowAllMemoryItems] = useState(false);
+  const [memoryItemPage, setMemoryItemPage] = useState(0);
+  const [showBackForItems, setShowBackForItems] = useState<Record<number, boolean>>({});
   
   // Memory item front/back fields
   const [newMemoryItemFront, setNewMemoryItemFront] = useState('');
@@ -571,7 +572,7 @@ const NewNote: React.FC = () => {
     return selected;
   };
 
-  const visibleItems = showAllMemoryItems ? memoryItems : memoryItems.slice(0, 3);
+  const visibleItems = memoryItems.slice(memoryItemPage * 3, (memoryItemPage + 1) * 3);
 
   if (isLoadingData) {
     return (
@@ -1105,174 +1106,209 @@ const NewNote: React.FC = () => {
             )}
 
             {/* Memory Item Cards */}
-            <div className={cn("relative flex flex-col gap-3", !showAllMemoryItems && memoryItems.length > 3 && "pb-12")}>
-              <AnimatePresence initial={false}>
+            <div className="flex flex-col gap-3">
+              <AnimatePresence mode="popLayout">
                 {visibleItems.map((item) => (
                   <motion.div 
                     key={item.id}
                     layout
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.2 }}
-                    className="bg-white border border-slate-200 p-6 rounded-xl hover:border-indigo-600/20 transition-all group shadow-sm overflow-hidden"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="bg-white border border-slate-200 p-5 rounded-xl hover:border-indigo-600/20 transition-all group shadow-sm overflow-hidden"
                   >
-                    {editingMemoryItemId === item.id ? (
-                      /* Edit Mode */
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-start mb-4">
-                          <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest">EDITING MEMORY CARD</span>
-                          <button 
-                            onClick={() => {
-                              setEditingMemoryItemId(null);
-                              setNewMemoryItemFront('');
-                              setNewMemoryItemBack('');
-                            }}
-                            className="material-symbols-outlined text-slate-400 hover:text-slate-600 !text-[18px]"
-                          >
-                            close
-                          </button>
-                        </div>
-                        <div>
-                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-1">
-                            Front
-                          </label>
-                          <textarea
-                            className="w-full text-sm border border-slate-200 rounded-lg p-2 bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none resize-none"
-                            rows={2}
-                            value={newMemoryItemFront || item.front || item.text || ''}
-                            onChange={(e) => setNewMemoryItemFront(e.target.value)}
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-1">
-                            Back
-                          </label>
-                          <textarea
-                            className="w-full text-sm border border-slate-200 rounded-lg p-2 bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none resize-none"
-                            rows={3}
-                            value={newMemoryItemBack || item.back || ''}
-                            onChange={(e) => setNewMemoryItemBack(e.target.value)}
-                          />
-                        </div>
-                        <div className="flex gap-2 justify-end pt-2">
-                          <button
-                            onClick={() => {
-                              setEditingMemoryItemId(null);
-                              setNewMemoryItemFront('');
-                              setNewMemoryItemBack('');
-                            }}
-                            className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 rounded-lg transition-all"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            onClick={async () => {
-                              try {
-                                await api.put(`/memories/${item.id}`, {
-                                  front: newMemoryItemFront || item.front || item.text,
-                                  back: newMemoryItemBack || item.back
-                                });
-                                // Refresh the memory items list
-                                const memoryRes = await api.get<PageResponse<MemoryItemDto>>('/memories?page=0&size=100');
-                                if (memoryRes.data?.content) {
-                                  const noteMemoryItems = memoryRes.data.content.filter(
-                                    mi => mi.source === title.trim()
-                                  );
-                                  setMemoryItems(noteMemoryItems);
-                                }
+                      {editingMemoryItemId === item.id ? (
+                        /* Edit Mode */
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-start mb-4">
+                            <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest">EDITING MEMORY CARD</span>
+                            <button 
+                              onClick={() => {
                                 setEditingMemoryItemId(null);
                                 setNewMemoryItemFront('');
                                 setNewMemoryItemBack('');
-                                setSuccess('Memory item updated!');
-                                setTimeout(() => setSuccess(null), 2000);
-                              } catch (err: any) {
-                                console.error('Failed to update memory item:', err);
-                                setError(err.response?.data?.message || 'Failed to update memory item');
-                              }
-                            }}
-                            className="px-4 py-2 text-sm bg-[#182442] text-white font-bold rounded-lg hover:opacity-90 transition-all"
-                          >
-                            Save Changes
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      /* Display Mode */
-                      <>
-                        <div className="flex justify-between items-start mb-4">
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">MEMORY CARD</span>
-                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button 
-                              onClick={() => {
-                                setEditingMemoryItemId(item.id);
-                                setNewMemoryItemFront(item.front || item.text || '');
-                                setNewMemoryItemBack(item.back || '');
                               }}
-                              className="material-symbols-outlined text-slate-300 hover:text-indigo-500 !text-[18px]"
-                              title="Edit"
+                              className="material-symbols-outlined text-slate-400 hover:text-slate-600 !text-[18px]"
                             >
-                              edit
+                              close
                             </button>
-                            <button 
-                              onClick={() => handleDeleteMemoryItem(item.id)}
-                              className="material-symbols-outlined text-slate-300 hover:text-red-500 !text-[18px]"
-                              title="Delete"
+                          </div>
+                          <div>
+                            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-1">
+                              Front
+                            </label>
+                            <textarea
+                              className="w-full text-sm border border-slate-200 rounded-lg p-2 bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none resize-none"
+                              rows={2}
+                              value={newMemoryItemFront || item.front || item.text || ''}
+                              onChange={(e) => setNewMemoryItemFront(e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-1">
+                              Back
+                            </label>
+                            <textarea
+                              className="w-full text-sm border border-slate-200 rounded-lg p-2 bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none resize-none"
+                              rows={3}
+                              value={newMemoryItemBack || item.back || ''}
+                              onChange={(e) => setNewMemoryItemBack(e.target.value)}
+                            />
+                          </div>
+                          <div className="flex gap-2 justify-end pt-2">
+                            <button
+                              onClick={() => {
+                                setEditingMemoryItemId(null);
+                                setNewMemoryItemFront('');
+                                setNewMemoryItemBack('');
+                              }}
+                              className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 rounded-lg transition-all"
                             >
-                              delete
+                              Cancel
+                            </button>
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await api.put(`/memories/${item.id}`, {
+                                    front: newMemoryItemFront || item.front || item.text,
+                                    back: newMemoryItemBack || item.back
+                                  });
+                                  // Refresh the memory items list
+                                  const memoryRes = await api.get<PageResponse<MemoryItemDto>>('/memories?page=0&size=100');
+                                  if (memoryRes.data?.content) {
+                                    const noteMemoryItems = memoryRes.data.content.filter(
+                                      mi => mi.source === title.trim()
+                                    );
+                                    setMemoryItems(noteMemoryItems);
+                                  }
+                                  setEditingMemoryItemId(null);
+                                  setNewMemoryItemFront('');
+                                  setNewMemoryItemBack('');
+                                  setSuccess('Memory item updated!');
+                                  setTimeout(() => setSuccess(null), 2000);
+                                } catch (err: any) {
+                                  console.error('Failed to update memory item:', err);
+                                  setError(err.response?.data?.message || 'Failed to update memory item');
+                                }
+                              }}
+                              className="px-4 py-2 text-sm bg-[#182442] text-white font-bold rounded-lg hover:opacity-90 transition-all"
+                            >
+                              Save Changes
                             </button>
                           </div>
                         </div>
-                        <div className="space-y-3">
-                          <div>
-                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Front</span>
+                      ) : (
+                        /* Display Mode */
+                        <>
+                          <div className="flex justify-between items-start mb-3">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">MEMORY CARD</span>
+                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button 
+                                onClick={() => {
+                                  setEditingMemoryItemId(item.id);
+                                  setNewMemoryItemFront(item.front || item.text || '');
+                                  setNewMemoryItemBack(item.back || '');
+                                }}
+                                className="material-symbols-outlined text-slate-300 hover:text-indigo-500 !text-[18px]"
+                                title="Edit"
+                              >
+                                edit
+                              </button>
+                              <button 
+                                onClick={() => handleDeleteMemoryItem(item.id)}
+                                className="material-symbols-outlined text-slate-300 hover:text-red-500 !text-[18px]"
+                                title="Delete"
+                              >
+                                delete
+                              </button>
+                            </div>
+                          </div>
+                          
+                          <div className="mb-3">
                             <p className="text-sm text-slate-700 leading-relaxed">
                               {item.front || item.text || 'No content'}
                             </p>
                           </div>
+
                           {item.back && (
-                            <div className="pt-2 border-t border-slate-100">
-                              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Back</span>
-                              <p className="text-sm text-slate-600 leading-relaxed">
-                                {item.back}
-                              </p>
-                            </div>
+                            <>
+                              <button
+                                onClick={() => setShowBackForItems(prev => ({ ...prev, [item.id]: !prev[item.id] }))}
+                                className="text-[10px] text-indigo-500 hover:text-indigo-600 font-semibold uppercase tracking-widest mb-2 transition-colors flex items-center gap-1"
+                              >
+                                {showBackForItems[item.id] ? 'Hide Back' : 'View Back'}
+                                <span className={cn(
+                                  "material-symbols-outlined !text-[14px] transition-transform",
+                                  showBackForItems[item.id] && "rotate-180"
+                                )}>
+                                  expand_more
+                                </span>
+                              </button>
+                              
+                              <motion.div
+                                initial={false}
+                                animate={{ height: showBackForItems[item.id] ? 'auto' : 0, opacity: showBackForItems[item.id] ? 1 : 0 }}
+                                transition={{ duration: 0.3, ease: "easeInOut" }}
+                                className="overflow-hidden"
+                              >
+                                <div className="pt-2 pb-1 border-t border-slate-100">
+                                  <p className="text-sm text-slate-600 leading-relaxed">
+                                    {item.back}
+                                  </p>
+                                </div>
+                              </motion.div>
+                            </>
                           )}
-                        </div>
-                        <div className="flex items-center justify-between pt-4 border-t border-slate-50 mt-4">
-                          <span className="flex items-center gap-1 text-[10px] text-[#3c6752] font-bold uppercase tracking-widest">
-                            <span className="material-symbols-outlined !text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                            {item.reviewCount > 0 ? `${item.reviewCount}x` : 'NEW'}
-                          </span>
-                          <span className="text-[10px] text-slate-300 font-bold uppercase tracking-widest">
-                            {item.due ? 'Due now' : 'Scheduled'}
-                          </span>
-                        </div>
-                      </>
-                    )}
-                  </motion.div>
-                ))}
+
+                          <div className="flex items-center justify-between pt-3 border-t border-slate-50 mt-3">
+                            <span className="flex items-center gap-1 text-[10px] text-[#3c6752] font-bold uppercase tracking-widest">
+                              <span className="material-symbols-outlined !text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                              {item.reviewCount > 0 ? `${item.reviewCount}x` : 'NEW'}
+                            </span>
+                            <span className="text-[10px] text-slate-300 font-bold uppercase tracking-widest">
+                              {item.due ? 'Due now' : 'Scheduled'}
+                            </span>
+                          </div>
+                        </>
+                      )}
+                    </motion.div>
+                  ))}
               </AnimatePresence>
 
-              {/* Fading overlay */}
-              {!showAllMemoryItems && memoryItems.length > 3 && (
-                <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-[#f7f9fb] via-[#f7f9fb]/90 to-transparent pointer-events-none z-10" />
-              )}
-
-              {/* View More / Show Less Button */}
+              {/* Navigation Controls */}
               {memoryItems.length > 3 && (
-                <div className={cn(
-                  "flex justify-center w-full z-20",
-                  !showAllMemoryItems ? "absolute bottom-0 left-0 right-0 pt-4 pb-2" : "mt-2"
-                )}>
+                <div className="flex justify-between items-center pt-2">
                   <button
-                    onClick={() => setShowAllMemoryItems(!showAllMemoryItems)}
-                    className="bg-white hover:bg-slate-50 border border-slate-200 text-[#182442] hover:text-indigo-600 px-6 py-2.5 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-2 active:scale-95 cursor-pointer"
+                    onClick={() => setMemoryItemPage(Math.max(0, memoryItemPage - 1))}
+                    disabled={memoryItemPage === 0}
+                    className={cn(
+                      "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1",
+                      memoryItemPage === 0
+                        ? "text-slate-300 cursor-not-allowed"
+                        : "text-[#182442] hover:bg-slate-50 active:scale-95"
+                    )}
                   >
-                    <span className="material-symbols-outlined !text-[16px]">
-                      {showAllMemoryItems ? 'expand_less' : 'expand_more'}
-                    </span>
-                    {showAllMemoryItems ? 'Show Less' : `View More (${memoryItems.length - 3} Items)`}
+                    <span className="material-symbols-outlined !text-[16px]">chevron_left</span>
+                    Previous
+                  </button>
+                  
+                  <span className="text-xs text-slate-500 font-medium">
+                    {memoryItemPage * 3 + 1}-{Math.min((memoryItemPage + 1) * 3, memoryItems.length)} of {memoryItems.length}
+                  </span>
+                  
+                  <button
+                    onClick={() => setMemoryItemPage(memoryItemPage + 1)}
+                    disabled={(memoryItemPage + 1) * 3 >= memoryItems.length}
+                    className={cn(
+                      "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1",
+                      (memoryItemPage + 1) * 3 >= memoryItems.length
+                        ? "text-slate-300 cursor-not-allowed"
+                        : "text-[#182442] hover:bg-slate-50 active:scale-95"
+                    )}
+                  >
+                    Next
+                    <span className="material-symbols-outlined !text-[16px]">chevron_right</span>
                   </button>
                 </div>
               )}

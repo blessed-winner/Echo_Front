@@ -27,6 +27,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
 }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [showMoreOptions, setShowMoreOptions] = useState(false);
+  const [showBack, setShowBack] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const priorityStyles = {
@@ -161,12 +162,39 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
       </div>
       
       <div className="flex-1">
-        <h4 className="font-bold text-text-primary text-lg leading-tight mb-2 group-hover:text-[#182442] transition-colors line-clamp-2">
+        <h4 className="font-bold text-text-primary text-lg leading-tight mb-3 group-hover:text-[#182442] transition-colors line-clamp-2">
           {stripHtml(title)}
         </h4>
-        <p style={{ fontFamily: "'DM Sans', ui-sans-serif, system-ui, sans-serif" }} className="text-text-secondary text-sm italic font-medium">
-          Deck: {stripHtml(deck)}
-        </p>
+        
+        {deck && (
+          <>
+            <button
+              onClick={() => setShowBack(!showBack)}
+              className="text-[10px] text-indigo-500 hover:text-indigo-600 font-semibold uppercase tracking-widest mb-2 transition-colors flex items-center gap-1"
+            >
+              {showBack ? 'Hide Back' : 'View Back'}
+              <span className={cn(
+                "material-symbols-outlined !text-[14px] transition-transform",
+                showBack && "rotate-180"
+              )}>
+                expand_more
+              </span>
+            </button>
+            
+            <div
+              className={cn(
+                "overflow-hidden transition-all duration-300 ease-in-out",
+                showBack ? "max-h-40 opacity-100 mb-2" : "max-h-0 opacity-0"
+              )}
+            >
+              <div className="pt-2 pb-1 border-t border-slate-100">
+                <p style={{ fontFamily: "'DM Sans', ui-sans-serif, system-ui, sans-serif" }} className="text-text-secondary text-sm italic font-medium leading-relaxed">
+                  {stripHtml(deck)}
+                </p>
+              </div>
+            </div>
+          </>
+        )}
       </div>
       
       <div className="flex items-center justify-between pt-4 border-t border-slate-100">
