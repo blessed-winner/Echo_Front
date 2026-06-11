@@ -118,8 +118,8 @@ const NewNote: React.FC = () => {
       const extractedTitle = titleMatch ? titleMatch[1] : '';
       const extractedContent = html.replace(/<h1[^>]*>[\s\S]*?<\/h1>/i, '').trim();
       
-      setTitle(extractedTitle);
-      setContent(extractedContent);
+      setTitle(extractedTitle || '');
+      setContent(extractedContent || '');
     },
     editorProps: {
       attributes: {
@@ -132,7 +132,7 @@ const NewNote: React.FC = () => {
   useEffect(() => {
     if (editor) {
       const currentHtml = editor.getHTML();
-      const newHtml = `<h1>${title}</h1>${content}`;
+      const newHtml = `<h1>${title ?? ''}</h1>${content ?? ''}`;
       if (currentHtml !== newHtml) {
         editor.commands.setContent(newHtml);
       }
@@ -142,10 +142,10 @@ const NewNote: React.FC = () => {
   // Track changes for save button
   useEffect(() => {
     // For title, compare both stripped text and raw HTML to detect formatting changes
-    const currentTitleText = stripHtml(title).trim();
-    const originalTitleText = stripHtml(originalTitle).trim();
+    const currentTitleText = stripHtml(title || '').trim();
+    const originalTitleText = stripHtml(originalTitle || '').trim();
     const titleTextChanged = currentTitleText !== originalTitleText;
-    const titleFormattingChanged = title.trim() !== originalTitle.trim();
+    const titleFormattingChanged = (title || '').trim() !== (originalTitle || '').trim();
     
     const hasChanges =
       titleTextChanged || titleFormattingChanged || content !== originalContent;
@@ -284,7 +284,7 @@ const NewNote: React.FC = () => {
 
   const handleSaveNote = async () => {
     // Validate title
-    const trimmedTitle = stripHtml(title).trim();
+    const trimmedTitle = stripHtml(title || '').trim();
     if (!trimmedTitle || trimmedTitle.length < 2) {
       setError('Title must be at least 2 characters');
       return;
@@ -401,7 +401,7 @@ const NewNote: React.FC = () => {
       const memoryData = {
         front: trimmedFront,
         back: trimmedBack,
-        source: title.trim() || 'Untitled Note',
+        source: (title || '').trim() || 'Untitled Note',
         noteId: noteId,
         tagIds: Array.from(selectedTagIds),
       };
@@ -1178,7 +1178,7 @@ const NewNote: React.FC = () => {
                                   const memoryRes = await api.get<PageResponse<MemoryItemDto>>('/memories?page=0&size=100');
                                   if (memoryRes.data?.content) {
                                     const noteMemoryItems = memoryRes.data.content.filter(
-                                      mi => mi.source === title.trim()
+                                      mi => mi.source === (title || '').trim()
                                     );
                                     setMemoryItems(noteMemoryItems);
                                   }
