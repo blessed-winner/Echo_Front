@@ -10,6 +10,12 @@ const SignUp: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState({ 
+    hasMinLength: false, 
+    hasUppercase: false, 
+    hasLowercase: false, 
+    hasNumber: false 
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -63,6 +69,14 @@ const SignUp: React.FC = () => {
     event.preventDefault();
     setError(null);
     setSuccess(null);
+
+    // Validate password requirements
+    if (!passwordStrength.hasMinLength || !passwordStrength.hasUppercase || 
+        !passwordStrength.hasLowercase || !passwordStrength.hasNumber) {
+      setError('Password must contain at least 8 characters, one uppercase, one lowercase, and one number');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -80,6 +94,17 @@ const SignUp: React.FC = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Update password strength as user types
+  const handlePasswordChange = (value: string) => {
+    setPassword(value);
+    setPasswordStrength({
+      hasMinLength: value.length >= 8,
+      hasUppercase: /[A-Z]/.test(value),
+      hasLowercase: /[a-z]/.test(value),
+      hasNumber: /\d/.test(value)
+    });
   };
 
   return (
@@ -253,10 +278,10 @@ const SignUp: React.FC = () => {
                 <input
                   className="w-full px-4 py-3.5 pl-12 pr-12 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none bg-white text-sm transition-all placeholder:text-slate-400"
                   id="password"
-                  placeholder="Min. 8 characters"
+                  placeholder="Create a strong password"
                   type={showPassword ? "text" : "password"}
                   value={password}
-                  onChange={(event) => setPassword(event.target.value)}
+                  onChange={(event) => handlePasswordChange(event.target.value)}
                   autoComplete="new-password"
                   required
                 />
@@ -268,6 +293,44 @@ const SignUp: React.FC = () => {
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
+              
+              {/* Password Requirements */}
+              {password && (
+                <div className="mt-3 space-y-1.5 px-1">
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className={`material-symbols-outlined !text-[14px] ${passwordStrength.hasMinLength ? 'text-emerald-600' : 'text-slate-300'}`}>
+                      {passwordStrength.hasMinLength ? 'check_circle' : 'cancel'}
+                    </span>
+                    <span className={passwordStrength.hasMinLength ? 'text-emerald-600 font-medium' : 'text-slate-400'}>
+                      At least 8 characters
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className={`material-symbols-outlined !text-[14px] ${passwordStrength.hasUppercase ? 'text-emerald-600' : 'text-slate-300'}`}>
+                      {passwordStrength.hasUppercase ? 'check_circle' : 'cancel'}
+                    </span>
+                    <span className={passwordStrength.hasUppercase ? 'text-emerald-600 font-medium' : 'text-slate-400'}>
+                      One uppercase letter
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className={`material-symbols-outlined !text-[14px] ${passwordStrength.hasLowercase ? 'text-emerald-600' : 'text-slate-300'}`}>
+                      {passwordStrength.hasLowercase ? 'check_circle' : 'cancel'}
+                    </span>
+                    <span className={passwordStrength.hasLowercase ? 'text-emerald-600 font-medium' : 'text-slate-400'}>
+                      One lowercase letter
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className={`material-symbols-outlined !text-[14px] ${passwordStrength.hasNumber ? 'text-emerald-600' : 'text-slate-300'}`}>
+                      {passwordStrength.hasNumber ? 'check_circle' : 'cancel'}
+                    </span>
+                    <span className={passwordStrength.hasNumber ? 'text-emerald-600 font-medium' : 'text-slate-400'}>
+                      One number
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Terms */}
