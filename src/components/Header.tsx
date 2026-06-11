@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
 import { api } from '../lib/api';
+import { NotificationPanel } from './NotificationPanel';
 
 interface UserAnalyticsDto {
   currentStreak: number;
@@ -13,6 +14,8 @@ export const Header: React.FC = () => {
   const { accessToken, isAuthLoading } = useUser();
   const [streak, setStreak] = useState(0);
   const [isLoadingStreak, setIsLoadingStreak] = useState(true);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   
   const currentDate = new Date().toLocaleDateString('en-US', { 
     weekday: 'short', 
@@ -69,6 +72,36 @@ export const Header: React.FC = () => {
     };
   }, [accessToken, isAuthLoading]);
 
+  // Load unread notification count
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadUnreadCount = async () => {
+      if (!accessToken || isAuthLoading) {
+        return;
+      }
+
+      try {
+        const response = await api.get<number>('/notifications/unread-count');
+        if (isMounted) {
+          setUnreadCount(response.data);
+        }
+      } catch (error) {
+        console.error('Failed to load unread count:', error);
+      }
+    };
+
+    void loadUnreadCount();
+
+    // Poll for new notifications every 30 seconds
+    const interval = setInterval(loadUnreadCount, 30000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [accessToken, isAuthLoading]);
+
   return (
     <header className="fixed top-0 right-0 w-[calc(100%-16rem)] z-40 bg-white/70 backdrop-blur-2xl border-b border-slate-100 flex items-center justify-between px-4 sm:px-6 lg:px-10 h-16 sm:h-20 ml-64 transition-all duration-300">
       <div className="flex items-center gap-2 sm:gap-4 lg:gap-8 flex-1 min-w-0 overflow-hidden">
@@ -110,13 +143,23 @@ export const Header: React.FC = () => {
         </Link>
 
         {/* Notifications */}
-        <button className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl sm:rounded-2xl text-slate-400 hover:bg-white hover:text-[#182442] hover:shadow-xl hover:shadow-black/5 transition-all relative group border border-transparent hover:border-slate-100/50 flex-shrink-0">
+        <button 
+          onClick={() => setShowNotifications(!showNotifications)}
+          className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl sm:rounded-2xl text-slate-400 hover:bg-white hover:text-[#182442] hover:shadow-xl hover:shadow-black/5 transition-all relative group border border-transparent hover:border-slate-100/50 flex-shrink-0"
+        >
           <span className="material-symbols-outlined !text-[20px] sm:!text-[22px] group-hover:rotate-[15deg] transition-transform duration-300">notifications</span>
-          <span className="absolute top-[7px] right-[7px] sm:top-[9px] sm:right-[9px] flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500 border border-white"></span>
-          </span>
+          {unreadCount > 0 && (
+            <span className="absolute top-[7px] right-[7px] sm:top-[9px] sm:right-[9px] flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500 border border-white"></span>
+            </span>
+          )}
         </button>
+
+        <NotificationPanel 
+          isOpen={showNotifications} 
+          onClose={() => setShowNotifications(false)} 
+        />
 
         <div className="w-px h-5 sm:h-6 bg-slate-200 mx-0.5 sm:mx-1 hidden sm:block"></div>
 
