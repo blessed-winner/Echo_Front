@@ -572,7 +572,7 @@ const NewNote: React.FC = () => {
     return selected;
   };
 
-  const visibleItems = memoryItems.slice(memoryItemPage * 3, (memoryItemPage + 1) * 3);
+  const visibleItems = memoryItems.slice(memoryItemPage, memoryItemPage + 1);
 
   if (isLoadingData) {
     return (
@@ -1277,7 +1277,7 @@ const NewNote: React.FC = () => {
               </AnimatePresence>
 
               {/* Navigation Controls */}
-              {memoryItems.length > 3 && (
+              {memoryItems.length > 2 && (
                 <div className="flex justify-between items-center pt-2">
                   <button
                     onClick={() => setMemoryItemPage(Math.max(0, memoryItemPage - 1))}
@@ -1294,15 +1294,15 @@ const NewNote: React.FC = () => {
                   </button>
                   
                   <span className="text-xs text-slate-500 font-medium">
-                    {memoryItemPage * 3 + 1}-{Math.min((memoryItemPage + 1) * 3, memoryItems.length)} of {memoryItems.length}
+                    {memoryItemPage * 2 + 1}-{Math.min((memoryItemPage + 1) * 2, memoryItems.length)} of {memoryItems.length}
                   </span>
                   
                   <button
                     onClick={() => setMemoryItemPage(memoryItemPage + 1)}
-                    disabled={(memoryItemPage + 1) * 3 >= memoryItems.length}
+                    disabled={(memoryItemPage + 1) * 2 >= memoryItems.length}
                     className={cn(
                       "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1",
-                      (memoryItemPage + 1) * 3 >= memoryItems.length
+                      (memoryItemPage + 1) * 2 >= memoryItems.length
                         ? "text-slate-300 cursor-not-allowed"
                         : "text-[#182442] hover:bg-slate-50 active:scale-95"
                     )}

@@ -331,7 +331,13 @@ const Dashboard: React.FC = () => {
       setActiveDecksValue(formatDeckCount(topicsCount));
       setDueCount(dueItemsCount);
       setCurrentStreak(streak);
-      setReviewCards(dueItems.map(toReviewCard));
+      
+      // Sort by priority: CRITICAL > MEDIUM > LOW
+      const priorityOrder = { CRITICAL: 0, MEDIUM: 1, LOW: 2 };
+      const sortedCards = dueItems.map(toReviewCard).sort((a, b) => 
+        priorityOrder[a.priority] - priorityOrder[b.priority]
+      );
+      setReviewCards(sortedCards);
 
       if (streak > 0) {
         document.title = `Echo Dashboard | ${streak} ${streak === 1 ? 'Day' : 'Days'} Streak`;
@@ -619,7 +625,7 @@ const Dashboard: React.FC = () => {
         ) : reviewCards.length > 0 ? (
           <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter">
-              {reviewCards.slice(reviewCardPage * 3, (reviewCardPage + 1) * 3).map((card, index) => (
+              {reviewCards.slice(reviewCardPage, reviewCardPage + 3).map((card, index) => (
                 <ReviewCard
                   key={`${card.id}-${index}`}
                   id={card.id}
@@ -634,39 +640,17 @@ const Dashboard: React.FC = () => {
               ))}
             </div>
             
-            {/* Pagination Controls */}
-            {reviewCards.length > 3 && (
-              <div className="flex justify-between items-center pt-6">
-                <button
-                  onClick={() => setReviewCardPage(Math.max(0, reviewCardPage - 1))}
-                  disabled={reviewCardPage === 0}
-                  className={cn(
-                    "px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2",
-                    reviewCardPage === 0
-                      ? "text-slate-300 cursor-not-allowed"
-                      : "text-[#182442] hover:bg-slate-50 active:scale-95"
-                  )}
-                >
-                  <span className="material-symbols-outlined !text-[18px]">chevron_left</span>
-                  Previous
-                </button>
-                
-                <span className="text-sm text-slate-500 font-medium">
-                  {reviewCardPage * 3 + 1}-{Math.min((reviewCardPage + 1) * 3, reviewCards.length)} of {reviewCards.length}
-                </span>
-                
+            {/* View More Link */}
+            {reviewCards.length > 3 && reviewCardPage + 3 < reviewCards.length && (
+              <div className="flex justify-center pt-4">
                 <button
                   onClick={() => setReviewCardPage(reviewCardPage + 1)}
-                  disabled={(reviewCardPage + 1) * 3 >= reviewCards.length}
-                  className={cn(
-                    "px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2",
-                    (reviewCardPage + 1) * 3 >= reviewCards.length
-                      ? "text-slate-300 cursor-not-allowed"
-                      : "text-[#182442] hover:bg-slate-50 active:scale-95"
-                  )}
+                  className="text-[#182442] hover:text-indigo-600 text-sm font-semibold transition-colors flex items-center gap-1 group"
                 >
-                  Next
-                  <span className="material-symbols-outlined !text-[18px]">chevron_right</span>
+                  View More
+                  <span className="material-symbols-outlined !text-[16px] group-hover:translate-y-0.5 transition-transform">
+                    expand_more
+                  </span>
                 </button>
               </div>
             )}
@@ -696,7 +680,7 @@ const Dashboard: React.FC = () => {
       </section>
 
       {/* Overwhelmed CTA — only shown when there is a meaningful backlog */}
-      {!isLoading && dueCount > 5 && (
+      {!isLoading && dueCount > 3 && (
         <section className="bg-[#182442] rounded-2xl p-10 flex flex-col md:flex-row items-center gap-8 mt-20 relative overflow-hidden group shadow-2xl shadow-[#182442]/20">
           <div className="absolute -right-20 -bottom-20 w-64 h-64 bg-white/5 rounded-full blur-3xl group-hover:bg-white/10 transition-all duration-700" />
           <div className="flex-1 space-y-3 text-center md:text-left relative z-10">
