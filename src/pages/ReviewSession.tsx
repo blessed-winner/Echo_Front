@@ -351,7 +351,7 @@ const ReviewSession: React.FC = () => {
                 {currentStreak > 0 && (
                   <div className="flex items-center gap-2 bg-[#ecfdf5] px-4 py-2 rounded-lg border border-[#3c6752]/10">
                     <span className="material-symbols-outlined text-[#3c6752] text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>local_fire_department</span>
-                    <span className="text-sm font-bold text-[#244f3b]">{currentStreak} Day Streak</span>
+                    <span className="text-sm font-bold text-[#244f3b]">{currentStreak} {currentStreak === 1 ? 'Day' : 'Days'} Streak</span>
                   </div>
                 )}
                 <button 
@@ -424,7 +424,7 @@ const ReviewSession: React.FC = () => {
             {currentStreak > 0 && (
               <div className="flex items-center gap-2 bg-[#eceef0] px-4 py-2 rounded-lg">
                 <span className="material-symbols-outlined text-[#3c6752] text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>local_fire_department</span>
-                <span className="text-sm font-bold text-[#244f3b]">{currentStreak} Days</span>
+                <span className="text-sm font-bold text-[#244f3b]">{currentStreak} {currentStreak === 1 ? 'Day' : 'Days'}</span>
               </div>
             )}
             <div className="flex items-center gap-2">
@@ -437,7 +437,7 @@ const ReviewSession: React.FC = () => {
         <div className="max-w-[720px] w-full mb-12">
           <div className="flex justify-between items-end mb-2">
             <span className="text-[12px] font-bold text-[#75777e] uppercase tracking-widest">Progress</span>
-            <span className="text-[12px] font-bold text-[#182442] uppercase tracking-widest">{reviewedCount} / {totalItems} cards</span>
+            <span className="text-[12px] font-bold text-[#182442] uppercase tracking-widest">{reviewedCount} / {totalItems} {totalItems === 1 ? 'card' : 'cards'}</span>
           </div>
           <div className="w-full h-1 bg-[#eceef0] rounded-full overflow-hidden">
             <div className="h-full bg-[#3c6752] transition-all duration-500" style={{ width: `${progressPercent}%` }}></div>

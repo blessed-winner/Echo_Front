@@ -147,9 +147,42 @@ const formatDueLabel = (nextReviewDate: string | null) => {
 };
 
 const getPriority = (item: MemoryItemDto): ReviewPriority => {
-  if (item.reviewCount <= 0) return 'CRITICAL';
-  if (item.reviewCount === 1) return 'MEDIUM';
-  return item.due ? 'MEDIUM' : 'LOW';
+  if (!item.nextReviewDate) return 'CRITICAL';
+  
+  const now = new Date();
+  const reviewDate = new Date(item.nextReviewDate);
+  const diffMs = reviewDate.getTime() - now.getTime();
+  const diffHours = diffMs / (1000 * 60 * 60);
+  const diffDays = diffMs / (1000 * 60 * 60 * 24);
+  
+  // New items (never reviewed) are always CRITICAL
+  if (item.reviewCount === 0) return 'CRITICAL';
+  
+  // Overdue items - priority increases with how long overdue
+  if (diffMs <= 0) {
+    const hoursOverdue = Math.abs(diffHours);
+    
+    // More than 3 days overdue = CRITICAL
+    if (hoursOverdue > 72) return 'CRITICAL';
+    
+    // 1-3 days overdue = MEDIUM
+    if (hoursOverdue > 24) return 'MEDIUM';
+    
+    // Less than 1 day overdue = LOW (just became due)
+    return 'LOW';
+  }
+  
+  // Items reviewed only once are fragile - MEDIUM priority
+  if (item.reviewCount === 1 && diffDays < 2) return 'MEDIUM';
+  
+  // Items due within next 6 hours = MEDIUM
+  if (diffHours < 6) return 'MEDIUM';
+  
+  // Items with low review count (2-3 reviews) and due soon
+  if (item.reviewCount <= 3 && diffDays < 1) return 'MEDIUM';
+  
+  // Everything else is LOW priority (well-established items)
+  return 'LOW';
 };
 
 const toReviewCard = (item: MemoryItemDto): DashboardReviewCard => ({
@@ -300,7 +333,7 @@ const Dashboard: React.FC = () => {
       setReviewCards(dueItems.map(toReviewCard));
 
       if (streak > 0) {
-        document.title = `Echo Dashboard | ${streak} Day Streak`;
+        document.title = `Echo Dashboard | ${streak} ${streak === 1 ? 'Day' : 'Days'} Streak`;
       }
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
@@ -339,13 +372,11 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const handleRescheduleMemoryItem = async (id: number, type: 'POSTPONE' | 'ADVANCE') => {
+  const handleRescheduleMemoryItem = async (id: number, type: 'IN_1_HOUR' | 'IN_3_HOURS' | 'IN_1_DAY' | 'IN_3_DAYS' | 'IN_1_WEEK') => {
     try {
       await api.post(`/memories/${id}/reschedule`, { type });
       // Re-fetch from the server instead of optimistically removing the card.
-      // The backend decides the new schedule; if the item was advanced it may
-      // still appear in the due list, and if postponed it should disappear —
-      // either way the server is the source of truth.
+      // The backend decides the new schedule; the server is the source of truth.
       void loadDashboard();
     } catch (error) {
       console.error('Failed to reschedule memory item:', error);
@@ -478,7 +509,7 @@ const Dashboard: React.FC = () => {
             ) : currentStreak > 0 ? (
               <>
                 <h3 className="text-[34px] font-medium mt-4 leading-none font-manrope">
-                  {currentStreak} Day Streak
+                  {currentStreak} {currentStreak === 1 ? 'Day' : 'Days'} Streak
                 </h3>
                 <p
                   style={{ fontFamily: "'DM Sans', ui-sans-serif, system-ui, sans-serif" }}
@@ -573,7 +604,7 @@ const Dashboard: React.FC = () => {
               className="bg-[#182442] text-white px-8 py-3 rounded-lg font-bold hover:opacity-90 transition-all flex items-center gap-2 shadow-lg shadow-primary/10"
             >
               <Play size={18} fill="currentColor" />
-              Start Session ({dueCount} Items)
+              Start Session ({dueCount} {dueCount === 1 ? 'Item' : 'Items'})
             </button>
           )}
         </div>
