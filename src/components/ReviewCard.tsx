@@ -26,6 +26,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
   onReschedule
 }) => {
   const [showMenu, setShowMenu] = useState(false);
+  const [showMoreOptions, setShowMoreOptions] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const priorityStyles = {
@@ -53,11 +54,13 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
 
   const handleDelete = () => {
     setShowMenu(false);
+    setShowMoreOptions(false);
     onDelete(id);
   };
 
   const handleReschedule = (type: RescheduleType) => {
     setShowMenu(false);
+    setShowMoreOptions(false);
     onReschedule(id, type);
   };
 
@@ -80,99 +83,76 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
           
           {/* Dropdown Menu */}
           {showMenu && (
-            <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-slate-200 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-              {/* Quick Reschedule Section */}
-              <div className="p-2">
-                <div className="px-3 py-2">
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">
-                    Quick Reschedule
-                  </p>
-                </div>
+            <div className="absolute right-0 top-full mt-2 w-44 bg-white border border-slate-200 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+              {/* Quick Actions */}
+              <div className="p-1.5">
                 <button
                   onClick={() => handleReschedule('IN_1_HOUR')}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50 rounded-lg transition-all group"
+                  className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-all"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
-                    <Timer size={14} className="text-blue-600" />
-                  </div>
-                  <div className="flex-1 text-left">
-                    <span className="font-semibold block">In 1 Hour</span>
-                    <span className="text-[10px] text-slate-500">Quick snooze</span>
-                  </div>
+                  <Timer size={14} className="text-blue-500" />
+                  <span className="font-medium">In 1 Hour</span>
                 </button>
-                <button
-                  onClick={() => handleReschedule('IN_3_HOURS')}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50 rounded-lg transition-all group"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center group-hover:bg-indigo-100 transition-colors">
-                    <Clock size={14} className="text-indigo-600" />
-                  </div>
-                  <div className="flex-1 text-left">
-                    <span className="font-semibold block">In 3 Hours</span>
-                    <span className="text-[10px] text-slate-500">Later today</span>
-                  </div>
-                </button>
-              </div>
-
-              <div className="h-px bg-slate-100 my-1" />
-
-              {/* Long Term Reschedule */}
-              <div className="p-2">
-                <div className="px-3 py-2">
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">
-                    Postpone
-                  </p>
-                </div>
                 <button
                   onClick={() => handleReschedule('IN_1_DAY')}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50 rounded-lg transition-all group"
+                  className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-all"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center group-hover:bg-purple-100 transition-colors">
-                    <FastForward size={14} className="text-purple-600" />
-                  </div>
-                  <div className="flex-1 text-left">
-                    <span className="font-semibold block">Tomorrow</span>
-                    <span className="text-[10px] text-slate-500">+1 day</span>
-                  </div>
+                  <FastForward size={14} className="text-purple-500" />
+                  <span className="font-medium">Tomorrow</span>
                 </button>
+                
+                {/* More Toggle */}
                 <button
-                  onClick={() => handleReschedule('IN_3_DAYS')}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50 rounded-lg transition-all group"
+                  onClick={() => setShowMoreOptions(!showMoreOptions)}
+                  className="w-full flex items-center justify-between gap-2 px-2.5 py-1 text-[10px] text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-all"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-violet-50 flex items-center justify-center group-hover:bg-violet-100 transition-colors">
-                    <FastForward size={14} className="text-violet-600" />
-                  </div>
-                  <div className="flex-1 text-left">
-                    <span className="font-semibold block">In 3 Days</span>
-                    <span className="text-[10px] text-slate-500">Weekend break</span>
-                  </div>
+                  <span className="font-medium">More</span>
+                  <span className={cn(
+                    "material-symbols-outlined !text-[14px] transition-transform",
+                    showMoreOptions && "rotate-180"
+                  )}>
+                    expand_more
+                  </span>
                 </button>
-                <button
-                  onClick={() => handleReschedule('IN_1_WEEK')}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50 rounded-lg transition-all group"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-pink-50 flex items-center justify-center group-hover:bg-pink-100 transition-colors">
-                    <FastForward size={14} className="text-pink-600" />
+
+                {/* Expandable More Options */}
+                {showMoreOptions && (
+                  <div className="mt-1 space-y-0.5 pl-2 border-l-2 border-slate-100">
+                    <button
+                      onClick={() => handleReschedule('IN_3_HOURS')}
+                      className="w-full flex items-center gap-2 px-2.5 py-1.5 text-[11px] text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-all"
+                    >
+                      <Clock size={12} className="text-indigo-400" />
+                      <span>In 3 Hours</span>
+                    </button>
+                    <button
+                      onClick={() => handleReschedule('IN_3_DAYS')}
+                      className="w-full flex items-center gap-2 px-2.5 py-1.5 text-[11px] text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-all"
+                    >
+                      <FastForward size={12} className="text-violet-400" />
+                      <span>In 3 Days</span>
+                    </button>
+                    <button
+                      onClick={() => handleReschedule('IN_1_WEEK')}
+                      className="w-full flex items-center gap-2 px-2.5 py-1.5 text-[11px] text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-all"
+                    >
+                      <FastForward size={12} className="text-pink-400" />
+                      <span>Next Week</span>
+                    </button>
                   </div>
-                  <div className="flex-1 text-left">
-                    <span className="font-semibold block">Next Week</span>
-                    <span className="text-[10px] text-slate-500">+7 days</span>
-                  </div>
-                </button>
+                )}
               </div>
 
-              <div className="h-px bg-slate-100 my-1" />
+              <div className="h-px bg-slate-100" />
 
               {/* Delete Action */}
-              <div className="p-2">
+              <div className="p-1.5">
                 <button
                   onClick={handleDelete}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-all group"
+                  className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center group-hover:bg-red-100 transition-colors">
-                    <Trash2 size={14} className="text-red-600" />
-                  </div>
-                  <span className="font-semibold">Delete Item</span>
+                  <Trash2 size={14} />
+                  <span className="font-medium">Delete Item</span>
                 </button>
               </div>
             </div>
