@@ -65,6 +65,7 @@ const Analytics: React.FC = () => {
     const saved = localStorage.getItem('heatmapView');
     return (saved === 'year' || saved === '6months') ? saved : '6months';
   });
+  const [reviewsView, setReviewsView] = useState<'weekly' | 'monthly'>('weekly');
 
   // Persist heatmap view preference
   useEffect(() => {
@@ -402,6 +403,41 @@ const Analytics: React.FC = () => {
     ? (totalTimeSpent / recentReviews.length).toFixed(1)
     : '0';
 
+  // Calculate monthly review data
+  const getMonthlyReviewData = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Get last 4 weeks (28 days)
+    const weeks: { reviews: number; label: string }[] = [];
+    
+    for (let i = 3; i >= 0; i--) {
+      const weekEnd = new Date(today);
+      weekEnd.setDate(today.getDate() - (i * 7));
+      const weekStart = new Date(weekEnd);
+      weekStart.setDate(weekEnd.getDate() - 6);
+      
+      const reviewsInWeek = recentReviews.filter(review => {
+        const reviewDate = new Date(review.reviewDate);
+        reviewDate.setHours(0, 0, 0, 0);
+        return reviewDate >= weekStart && reviewDate <= weekEnd;
+      }).length;
+      
+      const weekLabel = `Week ${4 - i}`;
+      weeks.push({ reviews: reviewsInWeek, label: weekLabel });
+    }
+    
+    return weeks;
+  };
+
+  const monthlyData = getMonthlyReviewData();
+  const maxMonthlyReviews = Math.max(...monthlyData.map(w => w.reviews), 1);
+
+  // Calculate total reviews for the period
+  const totalReviewsInPeriod = reviewsView === 'weekly' 
+    ? userAnalytics?.reviewsThisWeek ?? 0
+    : monthlyData.reduce((sum, week) => sum + week.reviews, 0);
+
   const showAdminRow = userRole === 'ADMIN' && adminAnalytics;
 
   return (
@@ -688,30 +724,64 @@ const Analytics: React.FC = () => {
           <div className="relative z-10">
             <div className="flex justify-between items-center mb-8">
               <h3 className="text-xl font-bold text-[#182442] font-manrope">Reviews Activity</h3>
-              <select className="text-[10px] font-bold uppercase tracking-widest border-none bg-slate-50 rounded-lg focus:ring-0 text-slate-600 cursor-pointer px-4 py-2">
-                <option>Weekly View</option>
-                <option>Monthly View</option>
+              <select 
+                value={reviewsView}
+                onChange={(e) => setReviewsView(e.target.value as 'weekly' | 'monthly')}
+                className="text-[10px] font-bold uppercase tracking-widest border-none bg-slate-50 rounded-lg focus:ring-0 text-slate-600 cursor-pointer px-4 py-2"
+              >
+                <option value="weekly">Weekly View</option>
+                <option value="monthly">Monthly View</option>
               </select>
             </div>
             <div className="space-y-6">
               <div className="flex items-center gap-4">
                 <div className="flex-1">
-                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">WEEKLY VOLUME</p>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">
+                    {reviewsView === 'weekly' ? 'WEEKLY VOLUME' : 'MONTHLY VOLUME (4 WEEKS)'}
+                  </p>
                   <div className="flex items-baseline gap-2">
                     <h4 className="text-3xl font-bold text-[#182442] font-manrope">
-                      {isLoading ? '...' : formatNumber(userAnalytics?.reviewsThisWeek ?? 0)}
+                      {isLoading ? '...' : formatNumber(totalReviewsInPeriod)}
                     </h4>
                     <p className="text-[#3c6752] text-sm font-bold">
-                      {userAnalytics && userAnalytics.totalReviews > 0 ? `↑ ${((userAnalytics.reviewsThisWeek / Math.max(userAnalytics.totalReviews, 1)) * 100).toFixed(1)}%` : 'Active'}
+                      {userAnalytics && userAnalytics.totalReviews > 0 
+                        ? `↑ ${((totalReviewsInPeriod / Math.max(userAnalytics.totalReviews, 1)) * 100).toFixed(1)}%` 
+                        : 'Active'}
                     </p>
                   </div>
                 </div>
                 <div className="w-32 h-16">
-                  <svg className="w-full h-full stroke-[#3c6752] fill-none stroke-2" viewBox="0 0 100 30">
-                    <path d="M0,25 L15,18 L30,22 L45,10 L60,15 L75,5 L100,12" strokeLinecap="round" strokeLinejoin="round"></path>
-                  </svg>
+                  {reviewsView === 'weekly' ? (
+                    <svg className="w-full h-full stroke-[#3c6752] fill-none stroke-2" viewBox="0 0 100 30">
+                      <path d="M0,25 L15,18 L30,22 L45,10 L60,15 L75,5 L100,12" strokeLinecap="round" strokeLinejoin="round"></path>
+                    </svg>
+                  ) : (
+                    <div className="flex items-end justify-between h-full gap-1">
+                      {monthlyData.map((week, i) => {
+                        const height = (week.reviews / maxMonthlyReviews) * 100;
+                        return (
+                          <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                            <div 
+                              className="w-full bg-[#3c6752] rounded-t transition-all"
+                              style={{ height: `${Math.max(height, 4)}%` }}
+                              title={`${week.label}: ${week.reviews} reviews`}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
+              
+              {reviewsView === 'monthly' && (
+                <div className="flex justify-between text-[9px] text-slate-400 font-bold uppercase tracking-wider px-1">
+                  {monthlyData.map((week, i) => (
+                    <span key={i}>{week.label}</span>
+                  ))}
+                </div>
+              )}
+              
               <div className="pt-4 grid grid-cols-2 gap-4">
                 <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
                   <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-1">New Items Added</p>
