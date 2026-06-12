@@ -408,6 +408,8 @@ const NewNote: React.FC = () => {
         tagIds: Array.from(selectedTagIds),
         customReminderTime: newMemoryItemReminderTime || null,
       };
+      
+      console.log("Sending memory data to create:", memoryData);
 
       console.log('Creating memory item with payload:', memoryData);
       const response = await api.post<MemoryItemDto>('/memories', memoryData);
@@ -1200,11 +1202,15 @@ const NewNote: React.FC = () => {
                             <button
                               onClick={async () => {
                                 try {
-                                  await api.put(`/memories/${item.id}`, {
+                                  const updateData = {
                                     front: newMemoryItemFront || item.front || item.text,
                                     back: newMemoryItemBack || item.back,
                                     customReminderTime: newMemoryItemReminderTime || null
-                                  });
+                                  };
+                                  
+                                  console.log("Sending memory data to update:", updateData);
+                                  
+                                  await api.put(`/memories/${item.id}`, updateData);
                                   // Refresh the memory items list
                                   const memoryRes = await api.get<PageResponse<MemoryItemDto>>('/memories?page=0&size=100');
                                   if (memoryRes.data?.content) {

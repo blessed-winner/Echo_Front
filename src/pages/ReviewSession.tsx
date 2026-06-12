@@ -6,6 +6,11 @@ import { useUser } from '../context/UserContext';
 import { api } from '../lib/api';
 import { Loader2 } from 'lucide-react';
 
+interface TopicDto {
+  id: number;
+  name: string;
+}
+
 interface TagDto {
   id: number;
   name: string;
