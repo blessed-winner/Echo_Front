@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { cn } from '../lib/utils';
 
@@ -10,6 +11,7 @@ interface NotificationDto {
   type: 'REMINDER' | 'MEMORY_REVIEW' | 'DEADLINE' | 'SYSTEM' | 'RESCHEDULE';
   read: boolean;
   createdAt: string;
+  referenceId?: string;
 }
 
 interface NotificationPanelProps {
@@ -18,6 +20,7 @@ interface NotificationPanelProps {
 }
 
 export const NotificationPanel: React.FC<NotificationPanelProps> = ({ isOpen, onClose }) => {
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState<NotificationDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -185,7 +188,14 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({ isOpen, on
                         'p-4 hover:bg-slate-50 transition-all cursor-pointer relative group',
                         !notification.read && 'bg-blue-50/30'
                       )}
-                      onClick={() => markAsRead(notification.id)}
+                      onClick={() => {
+                        markAsRead(notification.id);
+                        
+                        if (notification.type === 'MEMORY_REVIEW') {
+                          onClose();
+                          navigate('/review');
+                        }
+                      }}
                     >
                       <div className="flex items-start gap-3">
                         <div
