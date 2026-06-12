@@ -208,6 +208,7 @@ const Dashboard: React.FC = () => {
   const [weeklyGoalPercent, setWeeklyGoalPercent] = useState(0);
   const [activeDecksValue, setActiveDecksValue] = useState('00');
   const [retentionRate, setRetentionRate] = useState(0);
+  const [peakRetentionRate, setPeakRetentionRate] = useState(0);
   const [dueCount, setDueCount] = useState(0);
   const [currentStreak, setCurrentStreak] = useState(0);
   const [reviewCards, setReviewCards] = useState<DashboardReviewCard[]>([]);
@@ -310,10 +311,14 @@ const Dashboard: React.FC = () => {
       const { heights: graphData, todayIndex, retentionRates } =
         calculateWeeklyGraphData(recentReviews);
 
+      const maxWeeklyRetention = Math.max(...retentionRates.filter((r) => r > 0), 0);
+      const overallRetention = reviewSummary?.successfulReviews ?? analytics?.retentionRate ?? 0;
+      
       setWeeklyGraphData(graphData);
       setWeeklyRetentionRates(retentionRates);
       setTodayGraphIndex(todayIndex);
-      setRetentionRate(reviewSummary?.successfulReviews ?? analytics?.retentionRate ?? 0);
+      setRetentionRate(overallRetention);
+      setPeakRetentionRate(maxWeeklyRetention || overallRetention);
       setReviewProgressValue(
         `${formatNumber(reviewedToday)} / ${formatNumber(Math.max(totalMemoryItems, 1))}`
       );
@@ -418,7 +423,7 @@ const Dashboard: React.FC = () => {
         >
           {isLoading ? (
             'Loading your progress...'
-          ) : retentionRate > 0 ? (
+          ) : retentionRate > 0 || weeklyRetentionRates.some(r => r > 0) ? (
             <>
               Your retention is at an all-time high. Ready for today's{' '}
               <span className="text-[#182442]/60 font-medium">focus session</span>?
@@ -444,9 +449,9 @@ const Dashboard: React.FC = () => {
               <div className="px-3 py-1 bg-slate-100 text-slate-400 rounded-full text-xs font-bold animate-pulse">
                 Loading...
               </div>
-            ) : retentionRate > 0 ? (
+            ) : peakRetentionRate > 0 || weeklyRetentionRates.some(r => r > 0) ? (
               <div className="px-3 py-1 bg-[#ecfdf5] text-[#3c6752] rounded-full text-xs font-bold border border-[#3c6752]/10">
-                {retentionRate.toFixed(1)}% Peak
+                {peakRetentionRate.toFixed(1)}% Peak
               </div>
             ) : (
               <div className="px-3 py-1 bg-slate-100 text-slate-400 rounded-full text-xs font-bold">
