@@ -7,7 +7,7 @@ interface NotificationDto {
   id: string;
   title: string;
   message: string;
-  type: 'REMINDER' | 'MEMORY_REVIEW' | 'DEADLINE' | 'SYSTEM';
+  type: 'REMINDER' | 'MEMORY_REVIEW' | 'DEADLINE' | 'SYSTEM' | 'RESCHEDULE';
   read: boolean;
   createdAt: string;
 }
@@ -36,10 +36,12 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({ isOpen, on
         `/notifications?page=${page}&size=10`
       );
       
+      const notificationsData = response.data.content ?? [];
+      
       if (page === 0) {
-        setNotifications(response.data.content);
+        setNotifications(notificationsData);
       } else {
-        setNotifications(prev => [...prev, ...response.data.content]);
+        setNotifications(prev => [...(prev ?? []), ...notificationsData]);
       }
       
       setHasMore(!response.data.last);
@@ -71,6 +73,8 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({ isOpen, on
         return 'event';
       case 'SYSTEM':
         return 'info';
+      case 'RESCHEDULE':
+        return 'edit_calendar';
       default:
         return 'notifications';
     }
@@ -86,6 +90,8 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({ isOpen, on
         return 'bg-red-50 text-red-600 border-red-100';
       case 'SYSTEM':
         return 'bg-slate-50 text-slate-600 border-slate-100';
+      case 'RESCHEDULE':
+        return 'bg-amber-50 text-amber-600 border-amber-100';
       default:
         return 'bg-slate-50 text-slate-600 border-slate-100';
     }
@@ -136,7 +142,7 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({ isOpen, on
               <div>
                 <h3 className="text-lg font-bold text-[#182442] font-manrope">Notifications</h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  {notifications.filter(n => !n.read).length} unread
+                  {(notifications ?? []).filter(n => !n.read).length} unread
                 </p>
               </div>
               <button

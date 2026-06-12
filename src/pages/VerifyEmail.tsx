@@ -23,14 +23,6 @@ const VerifyEmail: React.FC = () => {
         const response = await api.get<string>(`/auth/verify?token=${encodeURIComponent(token)}`);
         setStatus('success');
         setMessage(response.data || 'Email verified successfully!');
-        
-        // Redirect to login after 3 seconds
-        setTimeout(() => {
-          navigate('/login', {
-            replace: true,
-            state: { message: 'Email verified! You can now log in.' }
-          });
-        }, 3000);
       } catch (error: any) {
         setStatus('error');
         setMessage(error.response?.data?.message || 'Verification failed. The link may be invalid or expired.');
@@ -38,7 +30,7 @@ const VerifyEmail: React.FC = () => {
     };
 
     verifyEmail();
-  }, [token, navigate]);
+  }, [token]);
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-8">
@@ -71,18 +63,12 @@ const VerifyEmail: React.FC = () => {
 
           {/* Action Buttons */}
           {status === 'success' && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-center gap-2 text-sm text-slate-500">
-                <span className="material-symbols-outlined !text-[16px]">schedule</span>
-                <span>Redirecting to login in 3 seconds...</span>
-              </div>
-              <button
-                onClick={() => navigate('/login', { replace: true })}
-                className="w-full py-3 bg-[#182442] text-white rounded-xl font-bold hover:opacity-90 transition-all shadow-lg"
-              >
-                Go to Login Now
-              </button>
-            </div>
+            <button
+              onClick={() => navigate('/login', { replace: true, state: { message: 'Email verified! You can now log in.' } })}
+              className="w-full py-3 bg-[#182442] text-white rounded-xl font-bold hover:opacity-90 transition-all shadow-lg"
+            >
+              Go to Login
+            </button>
           )}
 
           {status === 'error' && (
