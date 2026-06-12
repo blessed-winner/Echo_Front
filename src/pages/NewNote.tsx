@@ -33,6 +33,7 @@ interface MemoryItemDto {
   reviewCount: number;
   due: boolean;
   tags: { id: number; name: string }[] | null;
+  customReminderTime?: string | null;
 }
 
 interface PageResponse<T> {
@@ -57,6 +58,7 @@ const NewNote: React.FC = () => {
   // Memory item front/back fields
   const [newMemoryItemFront, setNewMemoryItemFront] = useState('');
   const [newMemoryItemBack, setNewMemoryItemBack] = useState('');
+  const [newMemoryItemReminderTime, setNewMemoryItemReminderTime] = useState('');
   
   // Track original values for change detection
   const [originalTitle, setOriginalTitle] = useState('');
@@ -404,6 +406,7 @@ const NewNote: React.FC = () => {
         source: (title || '').trim() || 'Untitled Note',
         noteId: noteId,
         tagIds: Array.from(selectedTagIds),
+        customReminderTime: newMemoryItemReminderTime || null,
       };
 
       console.log('Creating memory item with payload:', memoryData);
@@ -418,6 +421,7 @@ const NewNote: React.FC = () => {
       setMemoryItems([...memoryItems, response.data]);
       setNewMemoryItemFront('');
       setNewMemoryItemBack('');
+      setNewMemoryItemReminderTime('');
       setShowMemoryItemForm(false);
       setSuccess('Memory item added!');
       setTimeout(() => setSuccess(null), 2000);
@@ -1084,6 +1088,18 @@ const NewNote: React.FC = () => {
                     style={{ fontFamily: "'DM Sans', sans-serif" }}
                   />
                 </div>
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 block">
+                    Custom Reminder Time (Optional)
+                  </label>
+                  <input
+                    type="time"
+                    className="w-full text-sm border border-slate-200/60 rounded-xl p-3 bg-white focus:bg-white focus:ring-4 focus:ring-[#182442]/5 focus:border-[#182442] outline-none transition-all"
+                    value={newMemoryItemReminderTime}
+                    onChange={(e) => setNewMemoryItemReminderTime(e.target.value)}
+                    style={{ fontFamily: "'DM Sans', sans-serif" }}
+                  />
+                </div>
                 <div className="flex gap-2 mt-3">
                   <button
                     onClick={handleAddMemoryItem}
@@ -1096,6 +1112,7 @@ const NewNote: React.FC = () => {
                       setShowMemoryItemForm(false);
                       setNewMemoryItemFront('');
                       setNewMemoryItemBack('');
+                      setNewMemoryItemReminderTime('');
                     }}
                     className="px-4 py-2 bg-white border border-slate-200 text-slate-600 text-sm font-bold rounded-xl hover:bg-slate-50 transition-all active:scale-95"
                   >
@@ -1128,6 +1145,7 @@ const NewNote: React.FC = () => {
                                 setEditingMemoryItemId(null);
                                 setNewMemoryItemFront('');
                                 setNewMemoryItemBack('');
+                                setNewMemoryItemReminderTime('');
                               }}
                               className="material-symbols-outlined text-slate-400 hover:text-slate-600 !text-[18px]"
                             >
@@ -1156,12 +1174,24 @@ const NewNote: React.FC = () => {
                               onChange={(e) => setNewMemoryItemBack(e.target.value)}
                             />
                           </div>
+                          <div>
+                            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-1">
+                              Custom Reminder Time (Optional)
+                            </label>
+                            <input
+                              type="time"
+                              className="w-full text-sm border border-slate-200 rounded-lg p-2 bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                              value={newMemoryItemReminderTime || item.customReminderTime || ''}
+                              onChange={(e) => setNewMemoryItemReminderTime(e.target.value)}
+                            />
+                          </div>
                           <div className="flex gap-2 justify-end pt-2">
                             <button
                               onClick={() => {
                                 setEditingMemoryItemId(null);
                                 setNewMemoryItemFront('');
                                 setNewMemoryItemBack('');
+                                setNewMemoryItemReminderTime('');
                               }}
                               className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 rounded-lg transition-all"
                             >
@@ -1172,7 +1202,8 @@ const NewNote: React.FC = () => {
                                 try {
                                   await api.put(`/memories/${item.id}`, {
                                     front: newMemoryItemFront || item.front || item.text,
-                                    back: newMemoryItemBack || item.back
+                                    back: newMemoryItemBack || item.back,
+                                    customReminderTime: newMemoryItemReminderTime || null
                                   });
                                   // Refresh the memory items list
                                   const memoryRes = await api.get<PageResponse<MemoryItemDto>>('/memories?page=0&size=100');
@@ -1185,6 +1216,7 @@ const NewNote: React.FC = () => {
                                   setEditingMemoryItemId(null);
                                   setNewMemoryItemFront('');
                                   setNewMemoryItemBack('');
+                                  setNewMemoryItemReminderTime('');
                                   setSuccess('Memory item updated!');
                                   setTimeout(() => setSuccess(null), 2000);
                                 } catch (err: any) {
@@ -1206,10 +1238,11 @@ const NewNote: React.FC = () => {
                             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                               <button 
                                 onClick={() => {
-                                  setEditingMemoryItemId(item.id);
-                                  setNewMemoryItemFront(item.front || item.text || '');
-                                  setNewMemoryItemBack(item.back || '');
-                                }}
+                                setEditingMemoryItemId(item.id);
+                                setNewMemoryItemFront(item.front || item.text || '');
+                                setNewMemoryItemBack(item.back || '');
+                                setNewMemoryItemReminderTime(item.customReminderTime || '');
+                              }}
                                 className="material-symbols-outlined text-slate-300 hover:text-indigo-500 !text-[18px]"
                                 title="Edit"
                               >

@@ -54,6 +54,7 @@ interface MemoryItemDto {
   reviewCount: number;
   due: boolean;
   tags: TagDto[] | null;
+  customReminderTime?: string | null;
 }
 
 interface ReviewDto {

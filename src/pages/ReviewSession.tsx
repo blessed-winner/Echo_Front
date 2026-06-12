@@ -22,6 +22,7 @@ interface MemoryItemDto {
   due: boolean;
   tags: TagDto[] | null;
   noteId: number | null;
+  customReminderTime?: string | null;
 }
 
 interface NoteDto {

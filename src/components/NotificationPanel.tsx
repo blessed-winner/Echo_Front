@@ -164,7 +164,7 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({ isOpen, on
                     <p className="text-sm text-slate-500">Loading notifications...</p>
                   </div>
                 </div>
-              ) : notifications.length === 0 ? (
+              ) : (notifications ?? []).length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 px-6">
                   <span className="material-symbols-outlined text-slate-300 !text-[64px] mb-4">
                     notifications_off
@@ -176,7 +176,7 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({ isOpen, on
                 </div>
               ) : (
                 <div className="divide-y divide-slate-100">
-                  {notifications.map((notification) => (
+                  {(notifications ?? []).map((notification) => (
                     <motion.div
                       key={notification.id}
                       initial={{ opacity: 0, y: 10 }}
@@ -221,7 +221,7 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({ isOpen, on
               )}
 
               {/* Load More */}
-              {hasMore && !isLoading && notifications.length > 0 && (
+              {hasMore && !isLoading && (notifications ?? []).length > 0 && (
                 <div className="p-4 text-center">
                   <button
                     onClick={() => setPage(prev => prev + 1)}
