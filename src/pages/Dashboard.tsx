@@ -277,26 +277,6 @@ const Dashboard: React.FC = () => {
           ? recentReviewsResult.value.data.content
           : [];
 
-      console.log('📦 Extracted data:', {
-        analytics: analytics ? 'has data' : 'null',
-        reviewSummary: reviewSummary ? 'has data' : 'null',
-        memoryStats: memoryStats ? 'has data' : 'null',
-        dueItems: dueItems.length,
-        topics: topicsCount,
-        recentReviews: recentReviews.length,
-        analyticsRawValue: analyticsResult.status === 'fulfilled' ? analyticsResult.value : 'rejected',
-        analyticsRawData: analyticsResult.status === 'fulfilled' ? analyticsResult.value?.data : 'no data',
-      });
-
-      console.log('Dashboard data loaded:', {
-        analytics: analytics ? 'success' : 'failed',
-        reviewSummary: reviewSummary ? 'success' : 'failed',
-        memoryStats: memoryStats ? 'success' : 'failed',
-        dueItems: dueItems.length,
-        topics: topicsCount,
-        recentReviews: recentReviews.length,
-      });
-
       const avatars = topicsData.map((topic: TopicDto) => ({ name: topic.name, color: '' }));
       setTopicAvatars(avatars);
 
