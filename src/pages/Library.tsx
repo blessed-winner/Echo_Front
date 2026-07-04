@@ -4,6 +4,7 @@ import { cn, formatDisplayDate, parseApiDate, stripHtml } from '../lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
 import { api } from '../lib/api';
+import { EchoToast } from '../components/EchoToast';
 
 interface TopicDto {
   id: number;
@@ -62,6 +63,7 @@ const Library: React.FC = () => {
   const [editingTopic, setEditingTopic] = useState<number | null>(null);
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
+  const [shareToast, setShareToast] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -234,8 +236,39 @@ const Library: React.FC = () => {
     setEditDescription('');
   };
 
+  const handleShareNote = async (note: NoteDto) => {
+    const shareText = [
+      stripHtml(note.title) || 'Untitled note',
+      stripHtml(note.content) || 'No content yet',
+      note.topicName ? `Topic: ${note.topicName}` : null,
+    ]
+      .filter(Boolean)
+      .join('\n\n');
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: stripHtml(note.title) || 'Echo note',
+          text: shareText,
+        });
+      } else {
+        await navigator.clipboard.writeText(shareText);
+        setShareToast('Note summary copied to clipboard.');
+      }
+    } catch {
+      setShareToast('Could not share this note right now.');
+    } finally {
+      window.setTimeout(() => setShareToast(null), 3000);
+    }
+  };
+
   return (
     <div className="max-w-[1200px] mx-auto p-gutter space-y-gutter animate-in fade-in duration-700 pb-24">
+      {shareToast && (
+        <div className="sticky top-4 z-50 max-w-md mx-auto">
+          <EchoToast message={shareToast} variant="info" onDismiss={() => setShareToast(null)} />
+        </div>
+      )}
       {/* Header Section — Editorial Style */}
       <div className="mb-12 flex flex-col md:flex-row items-start md:items-end justify-between gap-6 animate-in slide-in-from-left duration-700">
         <div>
@@ -640,9 +673,10 @@ const Library: React.FC = () => {
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
-                        // TODO: Share functionality
+                        void handleShareNote(note);
                       }}
                       className="p-2 hover:bg-slate-50 rounded-lg text-slate-400 hover:text-indigo-600 transition-colors"
+                      title="Share note"
                     >
                       <span className="material-symbols-outlined">share</span>
                     </button>
