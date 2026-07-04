@@ -398,73 +398,91 @@ const LandingPage: React.FC = () => {
                 </div>
                 <div className="hidden md:block flex-1"></div>
               </div>
-
             </div>
           </div>
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section id="testimonials" className="py-24 bg-[#f7f9fb] px-6">
-        <div className="max-w-7xl mx-auto">
+      {/* Testimonials Section */}
+      <section id="testimonials" className="py-24 px-6 bg-[#182442]">
+        <div className="max-w-6xl mx-auto relative z-10">
           <div className="text-center mb-14">
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <span className="w-4 h-[1px] bg-[#182442]/30" />
-              <span className="text-[10px] font-bold text-[#182442]/50 uppercase tracking-widest">Voices</span>
-              <span className="w-4 h-[1px] bg-[#182442]/30" />
+            <div className="flex items-center justify-center gap-2 mb-5">
+              <span className="w-4 h-[1px] bg-white/20" />
+              <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Voices</span>
+              <span className="w-4 h-[1px] bg-white/20" />
             </div>
             <h2
               style={{ fontFamily: "'Cormorant Garamond', serif" }}
-              className="text-4xl md:text-5xl text-[#182442] font-medium leading-tight"
+              className="text-4xl md:text-5xl text-white font-medium leading-tight"
             >
-              Trusted by <span className="italic">focused</span> learners
+              Trusted by <span className="italic text-white/70">focused</span> learners
             </h2>
+            <p
+              style={{ fontFamily: "'DM Sans', ui-sans-serif, system-ui, sans-serif" }}
+              className="text-sm text-white/40 mt-3"
+            >
+              Join thousands who've transformed how they study and retain knowledge.
+            </p>
           </div>
-          <div className="grid md:grid-cols-3 gap-6">
+
+          <div className="grid md:grid-cols-3 gap-5">
             {[
               {
-                quote:
-                  'I completely ditched Anki for this. The interface makes studying a joy rather than a chore.',
+                quote: 'I completely ditched Anki for this. The interface makes studying a joy rather than a chore.',
                 initials: 'JT',
                 name: 'James T.',
                 role: 'Law Student',
+                stars: 5,
+                featured: false,
               },
               {
-                quote:
-                  'Phenomenal for medical school. The adaptive scheduling is noticeably better than any open-source alternative.',
+                quote: 'Phenomenal for medical school. The adaptive scheduling is noticeably better than any open-source alternative.',
                 initials: 'MC',
                 name: 'Madison Chen',
                 role: 'Med Student, Penn',
+                stars: 5,
+                featured: true,
               },
               {
-                quote:
-                  "Finally, a tool that respects cognitive load and doesn't spam me with gamification junk.",
+                quote: "Finally, a tool that respects cognitive load and doesn't spam me with gamification junk.",
                 initials: 'SJ',
                 name: 'Sarah Jenkins',
                 role: 'Researcher',
+                stars: 5,
+                featured: false,
               },
             ].map((item) => (
               <div
                 key={item.name}
-                className="bg-white border border-slate-200 rounded-xl p-8 shadow-sm hover:shadow-md hover:border-slate-300 transition-all flex flex-col justify-between min-h-[220px]"
+                className={`rounded-3xl border p-6 shadow-lg transition-transform duration-300 hover:-translate-y-1 ${
+                  item.featured
+                    ? 'bg-white/10 border-white/20 shadow-black/20'
+                    : 'bg-white/5 border-white/10 shadow-black/10'
+                }`}
               >
+                <div className="flex items-center gap-1 mb-5 text-amber-300">
+                  {Array.from({ length: item.stars }).map((_, index) => (
+                    <span key={index} className="inline-block w-2.5 h-2.5 rounded-full bg-current" />
+                  ))}
+                </div>
                 <p
                   style={{ fontFamily: "'DM Sans', ui-sans-serif, system-ui, sans-serif" }}
-                  className="text-sm text-slate-500 leading-relaxed"
+                  className="text-sm text-white/80 leading-relaxed"
                 >
-                  <span className="text-[#182442]/25 font-serif text-lg leading-none mr-0.5">"</span>
+                  <span className="text-white/30 font-serif text-lg leading-none mr-0.5">"</span>
                   {item.quote}
-                  <span className="text-[#182442]/25 font-serif text-lg leading-none ml-0.5">"</span>
+                  <span className="text-white/30 font-serif text-lg leading-none ml-0.5">"</span>
                 </p>
-                <div className="flex items-center gap-3 pt-6 mt-8 border-t border-slate-100">
-                  <div className="w-10 h-10 rounded-xl bg-[#182442]/8 border border-[#182442]/10 flex items-center justify-center text-[10px] font-bold text-[#182442] tracking-wide">
+                <div className="flex items-center gap-3 pt-6 mt-8 border-t border-white/10">
+                  <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center text-[10px] font-bold text-white tracking-wide">
                     {item.initials}
                   </div>
                   <div>
-                    <p className="font-bold text-sm text-[#182442] font-manrope">{item.name}</p>
+                    <p className="font-bold text-sm text-white font-manrope">{item.name}</p>
                     <p
                       style={{ fontFamily: "'DM Sans', ui-sans-serif, system-ui, sans-serif" }}
-                      className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5"
+                      className="text-[10px] text-white/45 font-bold uppercase tracking-widest mt-0.5"
                     >
                       {item.role}
                     </p>
