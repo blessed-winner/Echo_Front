@@ -67,6 +67,71 @@ const Library: React.FC = () => {
   const [editDescription, setEditDescription] = useState('');
   const [shareToast, setShareToast] = useState<string | null>(null);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadTopics = async () => {
+      if (isAuthLoading || !accessToken) return;
+      setIsLoading(true);
+      try {
+        const response = await api.get<PageResponse<TopicDto>>('/topics?page=0&size=100');
+        if (isMounted) {
+          setTopics(response.data?.content || []);
+          setTotalTopics(response.data?.totalElements || 0);
+        }
+      } catch (error) {
+        console.error('Failed to load topics:', error);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void loadTopics();
+    return () => {
+      isMounted = false;
+    };
+  }, [accessToken, isAuthLoading]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadNotes = async () => {
+      if (isAuthLoading || !accessToken) return;
+      setIsNotesLoading(true);
+      try {
+        let response;
+        if (selectedTopicId === null) {
+          response = await api.get<PageResponse<ApiNoteDto>>('/notes?page=0&size=100');
+        } else {
+          response = await api.get<PageResponse<ApiNoteDto>>(`/topics/${selectedTopicId}/notes?page=0&size=100`);
+        }
+        if (isMounted) {
+          const notesContent = response.data?.content
+            ? (Array.isArray(response.data.content) ? response.data.content.map(normalizeNote) : [])
+            : [];
+          setRecentNotes(notesContent);
+          if (selectedTopicId === null) {
+            setTotalNotes(response.data?.totalElements || 0);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load notes:', error);
+      } finally {
+        if (isMounted) {
+          setIsNotesLoading(false);
+        }
+      }
+    };
+
+    void loadNotes();
+    return () => {
+      isMounted = false;
+    };
+  }, [accessToken, isAuthLoading, selectedTopicId]);
+
+
   const getTopicIcon = (index: number) => {
     const icons = ['terminal', 'translate', 'medical_services', 'palette', 'account_balance', 'science', 'psychology', 'book'];
     return icons[index % icons.length];
