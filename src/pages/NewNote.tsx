@@ -264,6 +264,20 @@ const NewNote: React.FC = () => {
               }
             }
           }
+        } else if (isMounted) {
+          // If we're not editing, check for new note parameter states
+          const stateData = location.state as { topicId?: number; createNewTopic?: boolean } | null;
+          if (stateData) {
+            if (stateData.topicId) {
+              console.log('Setting pre-selected topic ID:', stateData.topicId);
+              setSelectedTopicId(stateData.topicId);
+            }
+            if (stateData.createNewTopic) {
+              console.log('Directing to create new topic inline form...');
+              setShowTopicDropdown(true);
+              setShowNewTopicForm(true);
+            }
+          }
         }
       } catch (err) {
         console.error('Failed to load data:', err);
@@ -531,6 +545,8 @@ const NewNote: React.FC = () => {
       console.log('Creating topic with payload:', payload);
       const response = await api.post<TopicDto>('/topics', payload);
       console.log('Topic created successfully:', response.data);
+      console.log('Topic created successfully (stringified):', JSON.stringify(response.data));
+      console.log('Topic created successfully (keys):', Object.keys(response.data || {}));
       const created = response.data;
       
       // Update topics list

@@ -60,108 +60,12 @@ const Library: React.FC = () => {
   const [totalTopics, setTotalTopics] = useState(0);
   const [totalNotes, setTotalNotes] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [isNotesLoading, setIsNotesLoading] = useState(false);
+  const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
   const [editingTopic, setEditingTopic] = useState<number | null>(null);
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [shareToast, setShareToast] = useState<string | null>(null);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadLibraryData = async () => {
-      console.log('Library: loadLibraryData called', { isAuthLoading, hasAccessToken: !!accessToken });
-      
-      // Wait for auth to complete
-      if (isAuthLoading) {
-        console.log('Library: Waiting for auth...');
-        return;
-      }
-
-      // Ensure we have a token before making API calls
-      if (!accessToken) {
-        console.log('Library: No access token');
-        setIsLoading(false);
-        return;
-      }
-
-      setIsLoading(true);
-      console.log('Library: Starting API calls with token present');
-
-      try {
-        console.log('Loading library data...');
-        const topicsPromise = api.get<PageResponse<TopicDto>>('/topics?page=0&size=10');
-        const notesPromise = api.get<PageResponse<ApiNoteDto>>('/notes?page=0&size=5');
-
-        const [topicsResult, notesResult] = await Promise.allSettled([
-          topicsPromise,
-          notesPromise,
-        ]);
-
-        if (!isMounted) {
-          return;
-        }
-
-        console.log('API Results:', {
-          topics: topicsResult.status,
-          topicsValue: topicsResult.status === 'fulfilled' ? topicsResult.value : null,
-          topicsValueKeys: topicsResult.status === 'fulfilled' ? Object.keys(topicsResult.value || {}) : [],
-          topicsValueData: topicsResult.status === 'fulfilled' ? topicsResult.value?.data : null,
-          notes: notesResult.status,
-          notesValue: notesResult.status === 'fulfilled' ? notesResult.value : null,
-          notesValueKeys: notesResult.status === 'fulfilled' ? Object.keys(notesResult.value || {}) : [],
-          notesValueData: notesResult.status === 'fulfilled' ? notesResult.value?.data : null
-        });
-
-        // Extract topics (matching Dashboard pattern)
-        const topicsContent = 
-          topicsResult.status === 'fulfilled' && topicsResult.value?.data?.content
-            ? (Array.isArray(topicsResult.value.data.content) ? topicsResult.value.data.content : [])
-            : [];
-        const topicsTotal = 
-          topicsResult.status === 'fulfilled' && topicsResult.value?.data?.totalElements
-            ? topicsResult.value.data.totalElements
-            : 0;
-
-        console.log('Topics extracted:', { count: topicsContent.length, total: topicsTotal });
-        setTopics(topicsContent);
-        setTotalTopics(topicsTotal);
-
-        if (topicsResult.status === 'rejected') {
-          console.error('Topics API call rejected:', topicsResult.reason);
-        }
-
-        // Extract notes (matching Dashboard pattern)
-        const notesContent = 
-          notesResult.status === 'fulfilled' && notesResult.value?.data?.content
-            ? (Array.isArray(notesResult.value.data.content) ? notesResult.value.data.content.map(normalizeNote) : [])
-            : [];
-        const notesTotal = 
-          notesResult.status === 'fulfilled' && notesResult.value?.data?.totalElements
-            ? notesResult.value.data.totalElements
-            : 0;
-
-        console.log('Notes extracted:', { count: notesContent.length, total: notesTotal });
-        setRecentNotes(notesContent);
-        setTotalNotes(notesTotal);
-
-        if (notesResult.status === 'rejected') {
-          console.error('Notes API call rejected:', notesResult.reason);
-        }
-      } catch (error) {
-        console.error('Failed to load library data:', error);
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    void loadLibraryData();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [accessToken, isAuthLoading]);
 
   const getTopicIcon = (index: number) => {
     const icons = ['terminal', 'translate', 'medical_services', 'palette', 'account_balance', 'science', 'psychology', 'book'];
@@ -262,6 +166,10 @@ const Library: React.FC = () => {
     }
   };
 
+  const handleTopicClick = (topicId: number) => {
+    setSelectedTopicId(prev => prev === topicId ? null : topicId);
+  };
+
   return (
     <div className="max-w-[1200px] mx-auto p-gutter space-y-gutter animate-in fade-in duration-700 pb-24">
       {shareToast && (
@@ -329,7 +237,7 @@ const Library: React.FC = () => {
               Topics help you organize your knowledge into meaningful categories. Create your first topic to get started.
             </p>
             <button 
-              onClick={() => navigate('/new')}
+              onClick={() => navigate('/new', { state: { createNewTopic: true } })}
               className="bg-[#182442] text-white px-8 py-3 rounded-xl font-bold hover:opacity-90 transition-all shadow-lg shadow-[#182442]/10 flex items-center gap-2"
             >
               <Plus size={20} />
@@ -340,10 +248,18 @@ const Library: React.FC = () => {
           <>
             {/* First topic - Large Featured */}
             {topics[0] && (
-              <div className="col-span-12 md:col-span-8 bg-white border border-slate-200 rounded-xl p-6 hover:border-indigo-500/20 transition-all group flex flex-col justify-between min-h-[320px] shadow-sm">
+              <div 
+                onClick={() => handleTopicClick(topics[0].id)}
+                className={cn(
+                  "col-span-12 md:col-span-8 bg-white border rounded-xl p-6 transition-all group flex flex-col justify-between min-h-[320px] shadow-sm cursor-pointer",
+                  selectedTopicId === topics[0].id 
+                    ? "border-indigo-600 ring-2 ring-indigo-600/20 bg-indigo-50/10 hover:border-indigo-600" 
+                    : "border-slate-200 hover:border-indigo-500/20"
+                )}
+              >
                 {editingTopic === topics[0].id ? (
                   /* Edit Mode */
-                  <div className="space-y-4">
+                  <div className="space-y-4" onClick={(e) => e.stopPropagation()}>
                     <div>
                       <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 block">Topic Name</label>
                       <input
@@ -387,7 +303,10 @@ const Library: React.FC = () => {
                       </div>
                       <div className="flex gap-2">
                         <button
-                          onClick={() => handleEditTopic(topics[0])}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditTopic(topics[0]);
+                          }}
                           className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-400 hover:text-[#182442]"
                           title="Edit topic"
                         >
@@ -406,8 +325,11 @@ const Library: React.FC = () => {
                         </p>
                       ) : (
                         <button
-                          onClick={() => handleEditTopic(topics[0])}
-                          className="text-[16px] text-slate-400 italic hover:text-[#182442] transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditTopic(topics[0]);
+                          }}
+                          className="text-[16px] text-slate-400 italic hover:text-[#182442] transition-colors text-left"
                         >
                           Click to add description...
                         </button>
@@ -430,9 +352,17 @@ const Library: React.FC = () => {
 
             {/* Second topic - Secondary Card */}
             {topics[1] && (
-              <div className="col-span-12 md:col-span-4 bg-white border border-slate-200 rounded-xl p-6 hover:border-indigo-500/20 transition-all group flex flex-col justify-between shadow-sm">
+              <div 
+                onClick={() => handleTopicClick(topics[1].id)}
+                className={cn(
+                  "col-span-12 md:col-span-4 bg-white border rounded-xl p-6 transition-all group flex flex-col justify-between shadow-sm cursor-pointer",
+                  selectedTopicId === topics[1].id 
+                    ? "border-indigo-600 ring-2 ring-indigo-600/20 bg-indigo-50/10 hover:border-indigo-600" 
+                    : "border-slate-200 hover:border-indigo-500/20"
+                )}
+              >
                 {editingTopic === topics[1].id ? (
-                  <div className="space-y-4">
+                  <div className="space-y-4" onClick={(e) => e.stopPropagation()}>
                     <div>
                       <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 block">Topic Name</label>
                       <input
@@ -480,7 +410,10 @@ const Library: React.FC = () => {
                         </p>
                       ) : (
                         <button
-                          onClick={() => handleEditTopic(topics[1])}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditTopic(topics[1]);
+                          }}
                           className="text-sm text-slate-400 italic hover:text-[#182442] transition-colors text-left"
                         >
                           Add description...
@@ -490,7 +423,10 @@ const Library: React.FC = () => {
                     <div className="pt-6 flex items-center justify-between">
                       <p className="text-xs text-slate-500 font-medium">Created {formatDate(topics[1].createdAt)}</p>
                       <button
-                        onClick={() => handleEditTopic(topics[1])}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditTopic(topics[1]);
+                        }}
                         className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-400 hover:text-[#182442]"
                         title="Edit topic"
                       >
@@ -503,12 +439,21 @@ const Library: React.FC = () => {
             )}
 
             {/* Remaining topics - Small Cards */}
-            {topics.slice(2, 5).map((topic, index) => {
+            {topics.slice(2).map((topic, index) => {
               const colorIndex = index + 2;
               return (
-                <div key={topic.id} className="col-span-12 md:col-span-4 bg-white border border-slate-200 rounded-xl p-6 hover:border-indigo-500/20 transition-all group shadow-sm">
+                <div 
+                  key={topic.id} 
+                  onClick={() => handleTopicClick(topic.id)}
+                  className={cn(
+                    "col-span-12 md:col-span-4 bg-white border rounded-xl p-6 transition-all group shadow-sm cursor-pointer",
+                    selectedTopicId === topic.id 
+                      ? "border-indigo-600 ring-2 ring-indigo-600/20 bg-indigo-50/10 hover:border-indigo-600" 
+                      : "border-slate-200 hover:border-indigo-500/20"
+                  )}
+                >
                   {editingTopic === topic.id ? (
-                    <div className="space-y-4">
+                    <div className="space-y-4" onClick={(e) => e.stopPropagation()}>
                       <div>
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 block">Topic Name</label>
                         <input
@@ -551,7 +496,10 @@ const Library: React.FC = () => {
                         </div>
                         <h3 className="font-bold text-primary leading-tight font-manrope line-clamp-1 flex-1">{topic.name}</h3>
                         <button
-                          onClick={() => handleEditTopic(topic)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditTopic(topic);
+                          }}
                           className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-400 hover:text-[#182442]"
                           title="Edit topic"
                         >
@@ -564,7 +512,10 @@ const Library: React.FC = () => {
                         </p>
                       ) : (
                         <button
-                          onClick={() => handleEditTopic(topic)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditTopic(topic);
+                          }}
                           className="text-sm text-slate-400 italic hover:text-[#182442] transition-colors mb-6 text-left"
                         >
                           Add description...
@@ -581,7 +532,7 @@ const Library: React.FC = () => {
 
             {/* Placeholder for Add Topic */}
             <div 
-              onClick={() => navigate('/new')}
+              onClick={() => navigate('/new', { state: { createNewTopic: true } })}
               className="col-span-12 border-2 border-dashed border-slate-200 rounded-xl p-12 flex flex-col items-center justify-center text-slate-400 hover:border-indigo-300 hover:text-indigo-400 hover:bg-indigo-50/20 transition-all cursor-pointer group"
             >
               <span className="material-symbols-outlined !text-4xl mb-2 group-hover:scale-110 transition-transform">add_circle</span>
@@ -598,16 +549,24 @@ const Library: React.FC = () => {
           <div>
             <div className="flex items-center gap-2 mb-3">
               <span className="w-4 h-[1px] bg-[#182442]/30"></span>
-              <span className="text-[10px] font-bold text-[#182442]/50 uppercase tracking-widest">Knowledge Stream</span>
+              <span className="text-[10px] font-bold text-[#182442]/50 uppercase tracking-widest">
+                {selectedTopicId ? "Topic Collection" : "Knowledge Stream"}
+              </span>
             </div>
-            <h3 style={{ fontFamily: "'Cormorant Garamond', serif" }} className="text-4xl text-[#182442] font-medium leading-none">Recent <span className="italic">Notes</span></h3>
+            <h3 style={{ fontFamily: "'Cormorant Garamond', serif" }} className="text-4xl text-[#182442] font-medium leading-none">
+              {selectedTopicId ? (
+                <>Notes in <span className="italic">{topics.find(t => t.id === selectedTopicId)?.name}</span></>
+              ) : (
+                <>Recent <span className="italic">Notes</span></>
+              )}
+            </h3>
           </div>
           <button className="text-[#182442] font-bold text-sm flex items-center gap-1 hover:gap-2 transition-all">
             Browse Full Library <span className="material-symbols-outlined">chevron_right</span>
           </button>
         </div>
         
-        {isLoading ? (
+        {isLoading || isNotesLoading ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
               <div key={i} className="bg-slate-50 border border-slate-200 rounded-xl p-6 h-24 animate-pulse"></div>
@@ -620,14 +579,17 @@ const Library: React.FC = () => {
             </div>
             <h4 className="text-2xl font-bold text-[#182442] mb-3 font-manrope">No Notes Yet</h4>
             <p className="text-slate-500 mb-8 max-w-md mx-auto leading-relaxed">
-              Start building your knowledge base by creating your first note. Notes can contain questions, concepts, or any information you want to remember.
+              {selectedTopicId 
+                ? "No notes have been added to this topic cluster yet."
+                : "Start building your knowledge base by creating your first note. Notes can contain questions, concepts, or any information you want to remember."
+              }
             </p>
             <button 
-              onClick={() => navigate('/new')}
+              onClick={() => navigate('/new', { state: { topicId: selectedTopicId } })}
               className="bg-[#182442] text-white px-8 py-3 rounded-xl font-bold hover:opacity-90 transition-all shadow-lg shadow-[#182442]/10 inline-flex items-center gap-2"
             >
               <Plus size={20} />
-              Create First Note
+              {selectedTopicId ? "Create Note in this Topic" : "Create First Note"}
             </button>
           </div>
         ) : (
@@ -690,7 +652,7 @@ const Library: React.FC = () => {
 
       {/* FAB - Fixed Action Button */}
       <button 
-        onClick={() => navigate('/new')}
+        onClick={() => navigate('/new', { state: { topicId: selectedTopicId } })}
         className="fab-btn group"
       >
         <Plus size={32} strokeWidth={2.5} className="group-hover:rotate-90 transition-transform duration-300" />
