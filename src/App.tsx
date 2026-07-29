@@ -11,7 +11,6 @@ import Library from './pages/Library';
 import ReviewSession from './pages/ReviewSession';
 import NewNote from './pages/NewNote';
 import Analytics from './pages/Analytics';
-import LandingPage from './pages/LandingPage';
 import AuthSuccess from './pages/AuthSuccess';
 import VerifyEmail from './pages/VerifyEmail';
 import { Navigate, useLocation } from 'react-router-dom';
@@ -50,7 +49,12 @@ const AppContent = () => {
         {showLayout && <Header />}
         <main className={showLayout ? "pt-16 pb-2" : ""}>
           <Routes>
-            <Route path="/" element={<LandingPage />} />
+            <Route
+              path="/"
+              element={
+                isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />
+              }
+            />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/auth/verify" element={<VerifyEmail />} />
@@ -61,7 +65,12 @@ const AppContent = () => {
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/review" element={<ReviewSession />} />
-            <Route path="*" element={<LandingPage />} />
+            <Route
+              path="*"
+              element={
+                isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />
+              }
+            />
           </Routes>
         </main>
       </div>
