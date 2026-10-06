@@ -1,5 +1,33 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { api, clearStoredAccessToken, getStoredAccessToken, oauthUrl, setStoredAccessToken } from '../lib/api';
+import {
+  api,
+  clearStoredAccessToken,
+  clearStoredAuthTokens,
+  getStoredAccessToken,
+  getStoredRefreshToken,
+  oauthUrl,
+  onTokenRefreshed,
+  setStoredAccessToken,
+  setStoredRefreshToken,
+} from '../lib/api';
+
+export const getJwtExpirationMs = (token: string): number | null => {
+  try {
+    const base64Url = token.split('.')[1];
+    if (!base64Url) return null;
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    const parsed = JSON.parse(jsonPayload);
+    return typeof parsed.exp === 'number' ? parsed.exp * 1000 : null;
+  } catch {
+    return null;
+  }
+};
 
 interface UserContextType {
   userName: string;
@@ -73,10 +101,41 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthLoading, setIsAuthLoading] = useState(!!initialToken);
   const [userRole, setUserRole] = useState<'USER' | 'ADMIN' | null>(storedSnapshot?.userRole ?? null);
   const hydrateRunIdRef = useRef(0);
+  const proactiveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const profileImageRef = useRef<string | null>(storedSnapshot?.profileImage ?? null);
   const userNameRef = useRef(storedSnapshot?.userName ?? '');
   const userEmailRef = useRef(storedSnapshot?.userEmail ?? '');
   const userRoleRef = useRef<'USER' | 'ADMIN' | null>(storedSnapshot?.userRole ?? null);
+
+  const clearProactiveTimer = useCallback(() => {
+    if (proactiveTimerRef.current) {
+      clearTimeout(proactiveTimerRef.current);
+      proactiveTimerRef.current = null;
+    }
+  }, []);
+
+  const scheduleProactiveRefresh = useCallback((token: string | null) => {
+    clearProactiveTimer();
+    if (!token) return;
+
+    const expMs = getJwtExpirationMs(token);
+    if (!expMs) return;
+
+    const remainingMs = expMs - Date.now();
+    if (remainingMs <= 0) return;
+
+    // Refresh 2 minutes before token expiration, or at 80% of remaining time if lifetime is short
+    const advanceNoticeMs = 2 * 60 * 1000;
+    const refreshDelay = Math.max(
+      5000,
+      remainingMs > advanceNoticeMs ? remainingMs - advanceNoticeMs : Math.floor(remainingMs * 0.8)
+    );
+
+    proactiveTimerRef.current = setTimeout(() => {
+      void refreshSession();
+    }, refreshDelay);
+  }, [clearProactiveTimer]);
 
   useEffect(() => {
     userNameRef.current = userName;
@@ -89,6 +148,16 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     userRoleRef.current = userRole;
   }, [userRole]);
+
+  useEffect(() => {
+    const unsubscribe = onTokenRefreshed((newToken) => {
+      setAccessToken(newToken);
+      scheduleProactiveRefresh(newToken);
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, [scheduleProactiveRefresh]);
 
   const persistSnapshot = useCallback(
     (overrides: Partial<AuthSnapshot> = {}) => {
@@ -145,6 +214,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setProfileImageState(null);
           setUserRole(null);
           clearAuthSnapshot();
+          clearProactiveTimer();
         }
         return false;
       }
@@ -172,6 +242,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setAccessToken(token);
         setIsAuthenticated(true);
         setIsAuthLoading(false);
+        scheduleProactiveRefresh(token);
         writeAuthSnapshot({
           accessToken: token,
           isAuthenticated: true,
@@ -184,7 +255,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       // If user data is missing or incomplete
-      clearStoredAccessToken();
+      clearStoredAuthTokens();
       setAccessToken(null);
       setIsAuthenticated(false);
       setUserName('');
@@ -196,6 +267,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       userEmailRef.current = '';
       userRoleRef.current = null;
       clearAuthSnapshot();
+      clearProactiveTimer();
       setIsAuthLoading(false);
       return false;
     } catch (error: any) {
@@ -205,8 +277,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       console.error('[UserContext] Failed to fetch user data:', error);
 
-      // On any error (401, 403, 500, network error), reset auth state completely
-      clearStoredAccessToken();
+      // On error during hydration, reset auth state completely
+      clearStoredAuthTokens();
       setAccessToken(null);
       setIsAuthenticated(false);
       setUserName('');
@@ -218,11 +290,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       userEmailRef.current = '';
       userRoleRef.current = null;
       clearAuthSnapshot();
+      clearProactiveTimer();
 
       setIsAuthLoading(false);
       return false;
     }
-  }, []);
+  }, [clearProactiveTimer, scheduleProactiveRefresh]);
 
   useEffect(() => {
     const isOAuthCallback =
@@ -244,9 +317,13 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [hydrateUser]);
 
   const login = async (email: string, password: string) => {
-    const response = await api.post<{ accessToken: string }>('/auth/login', { email, password });
+    const response = await api.post<{ accessToken: string; refreshToken?: string }>('/auth/login', { email, password });
     setStoredAccessToken(response.data.accessToken);
+    if (response.data.refreshToken) {
+      setStoredRefreshToken(response.data.refreshToken);
+    }
     setAccessToken(response.data.accessToken);
+    scheduleProactiveRefresh(response.data.accessToken);
     await hydrateUser();
   };
 
@@ -276,7 +353,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch {
       // Clear local session even if the server-side cookie delete fails.
     } finally {
-      clearStoredAccessToken();
+      clearProactiveTimer();
+      clearStoredAuthTokens();
       setAccessToken(null);
       setIsAuthenticated(false);
       setProfileImageState(null);
@@ -293,14 +371,23 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const refreshSession = async (): Promise<boolean> => {
     try {
-      const response = await api.post<{ accessToken: string }>('/auth/refresh');
-      setStoredAccessToken(response.data.accessToken);
-      setAccessToken(response.data.accessToken);
-      await hydrateUser();
+      const storedRefreshToken = getStoredRefreshToken();
+      const response = await api.post<{ accessToken: string; refreshToken?: string }>(
+        '/auth/refresh',
+        storedRefreshToken ? { refreshToken: storedRefreshToken } : {}
+      );
+      const newAccessToken = response.data.accessToken;
+      setStoredAccessToken(newAccessToken);
+      if (response.data.refreshToken) {
+        setStoredRefreshToken(response.data.refreshToken);
+      }
+      setAccessToken(newAccessToken);
+      scheduleProactiveRefresh(newAccessToken);
       return true;
     } catch (error: any) {
-      if (error?.response?.status === 401) {
-        clearStoredAccessToken();
+      clearProactiveTimer();
+      if (error?.response?.status === 401 || error?.response?.status === 400) {
+        clearStoredAuthTokens();
         setAccessToken(null);
         setIsAuthenticated(false);
         setProfileImageState(null);
@@ -321,6 +408,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const completeOAuth = async (token: string) => {
     setStoredAccessToken(token);
     setAccessToken(token);
+    scheduleProactiveRefresh(token);
     await hydrateUser();
   };
 

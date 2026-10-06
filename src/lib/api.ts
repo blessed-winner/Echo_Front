@@ -3,6 +3,27 @@ import type { AxiosInstance, InternalAxiosRequestConfig, AxiosError } from 'axio
 
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080';
 const ACCESS_TOKEN_KEY = 'accessToken';
+const REFRESH_TOKEN_KEY = 'refreshToken';
+
+type TokenRefreshListener = (newToken: string) => void;
+const refreshListeners: Set<TokenRefreshListener> = new Set();
+
+export const onTokenRefreshed = (listener: TokenRefreshListener): (() => void) => {
+  refreshListeners.add(listener);
+  return () => {
+    refreshListeners.delete(listener);
+  };
+};
+
+const notifyTokenRefreshed = (newToken: string) => {
+  refreshListeners.forEach((listener) => {
+    try {
+      listener(newToken);
+    } catch {
+      // Ignore listener errors
+    }
+  });
+};
 
 let isRefreshing = false;
 let failedQueue: Array<{
@@ -29,14 +50,25 @@ export const setStoredAccessToken = (token: string) => {
   localStorage.setItem(ACCESS_TOKEN_KEY, token);
 };
 
-export const clearStoredAccessToken = () => {
+export const getStoredRefreshToken = (): string | null => {
+  return localStorage.getItem(REFRESH_TOKEN_KEY);
+};
+
+export const setStoredRefreshToken = (token: string) => {
+  localStorage.setItem(REFRESH_TOKEN_KEY, token);
+};
+
+export const clearStoredAuthTokens = () => {
   localStorage.removeItem(ACCESS_TOKEN_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
   try {
     sessionStorage.removeItem('echoAuthSnapshot');
   } catch {
     // Ignore storage failures
   }
 };
+
+export const clearStoredAccessToken = clearStoredAuthTokens;
 
 export const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -87,14 +119,19 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const response = await axios.post<{ accessToken: string }>(
+        const storedRefreshToken = getStoredRefreshToken();
+        const response = await axios.post<{ accessToken: string; refreshToken?: string }>(
           `${API_BASE_URL}/auth/refresh`,
-          {},
+          storedRefreshToken ? { refreshToken: storedRefreshToken } : {},
           { withCredentials: true }
         );
 
         const newToken = response.data.accessToken;
         setStoredAccessToken(newToken);
+        if (response.data.refreshToken) {
+          setStoredRefreshToken(response.data.refreshToken);
+        }
+        notifyTokenRefreshed(newToken);
         processQueue(null, newToken);
 
         // Retry original request with new token
@@ -103,7 +140,7 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
-        clearStoredAccessToken();
+        clearStoredAuthTokens();
         
         // Redirect to login
         if (window.location.pathname !== '/login') {

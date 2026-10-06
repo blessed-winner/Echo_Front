@@ -66,6 +66,9 @@ const Library: React.FC = () => {
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [shareToast, setShareToast] = useState<string | null>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [notesPage, setNotesPage] = useState(1);
+  const NOTES_PER_PAGE = 8;
 
   useEffect(() => {
     let isMounted = true;
@@ -130,6 +133,11 @@ const Library: React.FC = () => {
       isMounted = false;
     };
   }, [accessToken, isAuthLoading, selectedTopicId]);
+
+  useEffect(() => {
+    setIsExpanded(false);
+    setNotesPage(1);
+  }, [selectedTopicId]);
 
 
   const getTopicIcon = (index: number) => {
@@ -626,9 +634,26 @@ const Library: React.FC = () => {
               )}
             </h3>
           </div>
-          <button className="text-[#182442] font-bold text-sm flex items-center gap-1 hover:gap-2 transition-all">
-            Browse Full Library <span className="material-symbols-outlined">chevron_right</span>
-          </button>
+          {recentNotes && recentNotes.length >= 4 && (
+            isExpanded ? (
+              <button 
+                onClick={() => {
+                  setIsExpanded(false);
+                  setNotesPage(1);
+                }}
+                className="text-[#182442] font-bold text-sm flex items-center gap-1 hover:gap-2 transition-all"
+              >
+                Collapse Library <span className="material-symbols-outlined">expand_less</span>
+              </button>
+            ) : (
+              <button 
+                onClick={() => setIsExpanded(true)}
+                className="text-[#182442] font-bold text-sm flex items-center gap-1 hover:gap-2 transition-all"
+              >
+                Browse Full Library <span className="material-symbols-outlined">chevron_right</span>
+              </button>
+            )
+          )}
         </div>
         
         {isLoading || isNotesLoading ? (
@@ -659,7 +684,10 @@ const Library: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {recentNotes.map((note, index) => {
+            {(isExpanded
+              ? recentNotes.slice((notesPage - 1) * NOTES_PER_PAGE, notesPage * NOTES_PER_PAGE)
+              : recentNotes.slice(0, 3)
+            ).map((note, index) => {
               const colorScheme = getTopicColor(index);
               return (
                 <div key={note.id}
@@ -711,6 +739,35 @@ const Library: React.FC = () => {
                 </div>
               );
             })}
+
+            {isExpanded && recentNotes.length > NOTES_PER_PAGE && (
+              <div className="flex items-center justify-between pt-6 border-t border-slate-100 mt-6 animate-in fade-in duration-300">
+                <p className="text-xs font-medium text-slate-400">
+                  Showing <span className="font-bold text-[#182442]">{(notesPage - 1) * NOTES_PER_PAGE + 1}</span> to <span className="font-bold text-[#182442]">{Math.min(notesPage * NOTES_PER_PAGE, recentNotes.length)}</span> of <span className="font-bold text-[#182442]">{recentNotes.length}</span> notes
+                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setNotesPage((prev) => Math.max(prev - 1, 1))}
+                    disabled={notesPage === 1}
+                    className="px-3.5 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-[#182442] hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center gap-1 shadow-sm"
+                  >
+                    <span className="material-symbols-outlined !text-[16px]">chevron_left</span>
+                    Prev
+                  </button>
+                  <span className="text-xs font-bold text-[#182442] px-2">
+                    {notesPage} / {Math.ceil(recentNotes.length / NOTES_PER_PAGE)}
+                  </span>
+                  <button
+                    onClick={() => setNotesPage((prev) => Math.min(prev + 1, Math.ceil(recentNotes.length / NOTES_PER_PAGE)))}
+                    disabled={notesPage === Math.ceil(recentNotes.length / NOTES_PER_PAGE)}
+                    className="px-3.5 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-[#182442] hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center gap-1 shadow-sm"
+                  >
+                    Next
+                    <span className="material-symbols-outlined !text-[16px]">chevron_right</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
