@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -97,6 +97,27 @@ const ReviewSession: React.FC = () => {
     return `${years}y`;
   };
 
+  const activeIntervals = useMemo(() => {
+    if (
+      reviewIntervals &&
+      reviewIntervals.hardDays > reviewIntervals.againDays &&
+      reviewIntervals.goodDays > reviewIntervals.hardDays &&
+      reviewIntervals.easyDays > reviewIntervals.goodDays
+    ) {
+      return reviewIntervals;
+    }
+
+    // Dynamic SRS progressive fallback (1d, 2d, 4d, 7d for new items)
+    const currentInterval = 1;
+    const currentEaseFactor = 2.5;
+    const againDays = 1;
+    const hardDays = Math.max(2, Math.round(currentInterval * 1.2));
+    const goodDays = Math.max(hardDays + 2, Math.round(currentInterval * currentEaseFactor));
+    const easyDays = Math.max(goodDays + 3, Math.round(currentInterval * currentEaseFactor * 1.35));
+
+    return { againDays, hardDays, goodDays, easyDays };
+  }, [reviewIntervals]);
+
   // Fetch and view full note
   const handleViewNote = async () => {
     if (!currentItem || !currentItem.noteId) {
@@ -131,7 +152,7 @@ const ReviewSession: React.FC = () => {
         setReviewIntervals(response.data);
       } catch (error) {
         console.error('Failed to fetch review intervals:', error);
-        // Fallback to static values
+        // Fallback to progressive default values
         setReviewIntervals({ againDays: 1, hardDays: 2, goodDays: 4, easyDays: 7 });
       }
     };
@@ -522,7 +543,7 @@ const ReviewSession: React.FC = () => {
                   >
                     <span className="font-bold text-[#ba1a1a]">Again</span>
                     <span className="text-[10px] font-bold text-[#93000a] opacity-60 group-hover:opacity-100 tracking-widest uppercase">
-                      {reviewIntervals ? formatInterval(reviewIntervals.againDays) : '1d'}
+                      {formatInterval(activeIntervals.againDays)}
                     </span>
                   </button>
                   <button 
@@ -532,7 +553,7 @@ const ReviewSession: React.FC = () => {
                   >
                     <span className="font-bold text-[#45464e]">Hard</span>
                     <span className="text-[10px] font-bold text-[#75777e] opacity-60 group-hover:opacity-100 tracking-widest uppercase">
-                      {reviewIntervals ? formatInterval(reviewIntervals.hardDays) : '2d'}
+                      {formatInterval(activeIntervals.hardDays)}
                     </span>
                   </button>
                   <button 
@@ -542,7 +563,7 @@ const ReviewSession: React.FC = () => {
                   >
                     <span className="font-bold text-white">Good</span>
                     <span className="text-[10px] font-bold text-white/80 group-hover:opacity-100 tracking-widest uppercase">
-                      {reviewIntervals ? formatInterval(reviewIntervals.goodDays) : '4d'}
+                      {formatInterval(activeIntervals.goodDays)}
                     </span>
                   </button>
                   <button 
@@ -552,7 +573,7 @@ const ReviewSession: React.FC = () => {
                   >
                     <span className="font-bold text-white">Easy</span>
                     <span className="text-[10px] font-bold text-white/80 group-hover:opacity-100 tracking-widest uppercase">
-                      {reviewIntervals ? formatInterval(reviewIntervals.easyDays) : '7d'}
+                      {formatInterval(activeIntervals.easyDays)}
                     </span>
                   </button>
                 </div>

@@ -307,7 +307,7 @@ const Login: React.FC = () => {
           <div className="mt-16 text-center">
             <p className="text-[10px] text-on-surface-variant/40 leading-relaxed font-medium uppercase tracking-tighter">
               By signing in, you agree to our <br/>
-              <a className="underline hover:text-on-surface transition-colors" href="#">Terms of Service</a> and <a className="underline hover:text-on-surface transition-colors" href="#">Privacy Policy</a>
+              <Link className="underline hover:text-on-surface transition-colors" to="/terms">Terms of Service</Link> and <Link className="underline hover:text-on-surface transition-colors" to="/privacy">Privacy Policy</Link>
             </p>
           </div>
         </div>

@@ -13,6 +13,9 @@ import NewNote from './pages/NewNote';
 import Analytics from './pages/Analytics';
 import AuthSuccess from './pages/AuthSuccess';
 import VerifyEmail from './pages/VerifyEmail';
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
+import LandingPage from './pages/LandingPage';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useUser } from './context/UserContext';
 
@@ -22,7 +25,8 @@ const AppContent = () => {
   const isAuthPage = location.pathname === '/login' || location.pathname === '/signup' || location.pathname.startsWith('/auth/');
   const isReviewPage = location.pathname === '/review';
   const isLandingPage = location.pathname === '/';
-  const showLayout = !isAuthPage && !isReviewPage && !isLandingPage;
+  const isLegalPage = location.pathname === '/terms' || location.pathname === '/privacy';
+  const showLayout = !isAuthPage && !isReviewPage && !isLandingPage && !isLegalPage;
   const isPrivateRoute = ['/dashboard', '/library', '/new', '/analytics', '/settings'].some((path) =>
     location.pathname === path || location.pathname.startsWith(`${path}/`)
   ) || isReviewPage;
@@ -49,12 +53,7 @@ const AppContent = () => {
         {showLayout && <Header />}
         <main className={showLayout ? "pt-16 pb-2" : ""}>
           <Routes>
-            <Route
-              path="/"
-              element={
-                isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />
-              }
-            />
+            <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/auth/verify" element={<VerifyEmail />} />
@@ -65,10 +64,12 @@ const AppContent = () => {
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/review" element={<ReviewSession />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
             <Route
               path="*"
               element={
-                isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />
+                isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/" replace />
               }
             />
           </Routes>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Edit2, Eye, EyeOff } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Edit2, Eye, EyeOff, ShieldCheck, FileText } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useUser } from '../context/UserContext';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -476,6 +477,32 @@ const Settings: React.FC = () => {
             </button>
           </div>
 
+        </div>
+
+        {/* ── Row 5 · Legal & Compliance ──────────────────────────────── */}
+        <div className="bg-white border border-slate-100 rounded-[28px] p-8 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-500 delay-250">
+          <SectionEyebrow icon="gavel" label="Legal & Compliance" />
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p style={{ fontFamily: "'DM Sans', sans-serif" }} className="text-sm text-slate-500 leading-relaxed">
+              Review our terms, service commitments, and data privacy policies.
+            </p>
+            <div className="flex items-center gap-3 shrink-0">
+              <Link
+                to="/terms"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-[#182442] hover:bg-slate-50 transition-all"
+              >
+                <FileText size={15} />
+                <span>Terms of Service</span>
+              </Link>
+              <Link
+                to="/privacy"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-[#182442] hover:bg-slate-50 transition-all"
+              >
+                <ShieldCheck size={15} className="text-emerald-600" />
+                <span>Privacy Policy</span>
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -121,6 +121,25 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({ isOpen, on
     }
   };
 
+  const deleteNotification = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setNotifications(prev => prev.filter(n => n.id !== id));
+    try {
+      await api.delete(`/notifications/${id}`);
+    } catch {
+      // ignore
+    }
+  };
+
+  const clearAllNotifications = async () => {
+    setNotifications([]);
+    try {
+      await api.delete('/notifications');
+    } catch {
+      // ignore
+    }
+  };
+
   const unreadCount = (notifications ?? []).filter(n => !n.read).length;
 
   return (
@@ -171,15 +190,29 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({ isOpen, on
                 </div>
               </div>
 
-              <button
-                id="notification-close-btn"
-                onClick={onClose}
-                className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 flex items-center justify-center transition-all group"
-              >
-                <span className="material-symbols-outlined !text-[17px] text-white/60 group-hover:text-white transition-colors">
-                  close
-                </span>
-              </button>
+              <div className="flex items-center gap-2">
+                {(notifications ?? []).length > 0 && (
+                  <button
+                    id="notification-clear-all-btn"
+                    onClick={clearAllNotifications}
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/10 hover:bg-red-500/20 text-white/70 hover:text-white border border-white/10 text-[10px] font-bold uppercase tracking-wider transition-all"
+                    title="Clear all notifications"
+                  >
+                    <span className="material-symbols-outlined !text-[14px]">delete_sweep</span>
+                    <span>Clear all</span>
+                  </button>
+                )}
+
+                <button
+                  id="notification-close-btn"
+                  onClick={onClose}
+                  className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 flex items-center justify-center transition-all group"
+                >
+                  <span className="material-symbols-outlined !text-[17px] text-white/60 group-hover:text-white transition-colors">
+                    close
+                  </span>
+                </button>
+              </div>
             </div>
 
             {/* Body */}
@@ -280,9 +313,19 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({ isOpen, on
                             >
                               {meta.label}
                             </span>
-                            <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider ml-auto">
-                              {formatTimeAgo(n.createdAt)}
-                            </span>
+                            <div className="ml-auto flex items-center gap-1.5">
+                              <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">
+                                {formatTimeAgo(n.createdAt)}
+                              </span>
+                              <button
+                                id={`notification-delete-btn-${n.id}`}
+                                onClick={(e) => deleteNotification(n.id, e)}
+                                className="p-1 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100 flex items-center justify-center"
+                                title="Delete notification"
+                              >
+                                <span className="material-symbols-outlined !text-[15px]">delete</span>
+                              </button>
+                            </div>
                           </div>
 
                           <h4

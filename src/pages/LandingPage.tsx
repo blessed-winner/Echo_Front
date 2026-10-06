@@ -643,7 +643,6 @@ const LandingPage: React.FC = () => {
             </div>
           </div>
         </div>
-
         {/* Footer Links & Brand Section */}
         <div className="bg-[#182442] rounded-t-[48px] pt-12 pb-8 px-6 mt-16 text-white">
           <div className="max-w-7xl mx-auto">
@@ -673,8 +672,8 @@ const LandingPage: React.FC = () => {
               {/* Product Column */}
               <div className="flex flex-col gap-4">
                 <span className="font-bold text-white text-lg mb-2">Product</span>
-                <a href="#" className="text-white/60 hover:text-white transition-colors text-sm">Features</a>
-                <a href="#" className="text-white/60 hover:text-white transition-colors text-sm">Pricing</a>
+                <a href="#features" className="text-white/60 hover:text-white transition-colors text-sm">Features</a>
+                <a href="#pricing" className="text-white/60 hover:text-white transition-colors text-sm">Pricing</a>
                 <a href="#" className="text-white/60 hover:text-white transition-colors text-sm">Mobile App</a>
                 <a href="#" className="text-white/60 hover:text-white transition-colors text-sm">API</a>
               </div>
@@ -685,7 +684,7 @@ const LandingPage: React.FC = () => {
                 <a href="#" className="text-white/60 hover:text-white transition-colors text-sm">About Us</a>
                 <a href="#" className="text-white/60 hover:text-white transition-colors text-sm">Careers</a>
                 <a href="#" className="text-white/60 hover:text-white transition-colors text-sm">Blog</a>
-                <a href="#" className="text-white/60 hover:text-white transition-colors text-sm">Legal</a>
+                <Link to="/terms" className="text-white/60 hover:text-white transition-colors text-sm">Legal</Link>
               </div>
 
               {/* Support Column */}
@@ -704,9 +703,9 @@ const LandingPage: React.FC = () => {
                 © {new Date().getFullYear()} Echo Memory Assistant. All rights reserved.
               </p>
               <div className="flex gap-8 text-xs text-white/40">
-                <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-                <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
-                <a href="#" className="hover:text-white transition-colors">Cookie Policy</a>
+                <Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
+                <Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
+                <Link to="/privacy" className="hover:text-white transition-colors">Cookie Policy</Link>
               </div>
             </div>
           </div>

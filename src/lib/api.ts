@@ -31,6 +31,11 @@ export const setStoredAccessToken = (token: string) => {
 
 export const clearStoredAccessToken = () => {
   localStorage.removeItem(ACCESS_TOKEN_KEY);
+  try {
+    sessionStorage.removeItem('echoAuthSnapshot');
+  } catch {
+    // Ignore storage failures
+  }
 };
 
 export const api: AxiosInstance = axios.create({

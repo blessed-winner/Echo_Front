@@ -61,14 +61,15 @@ const clearAuthSnapshot = () => {
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const storedSnapshot = readAuthSnapshot();
-  const initialToken = storedSnapshot?.accessToken ?? getStoredAccessToken();
+  const tokenInStorage = getStoredAccessToken();
+  const storedSnapshot = tokenInStorage ? readAuthSnapshot() : null;
+  const initialToken = tokenInStorage;
 
   const [userName, setUserName] = useState(storedSnapshot?.userName ?? '');
   const [userEmail, setUserEmail] = useState(storedSnapshot?.userEmail ?? '');
   const [profileImage, setProfileImageState] = useState<string | null>(storedSnapshot?.profileImage ?? null);
   const [accessToken, setAccessToken] = useState<string | null>(initialToken);
-  const [isAuthenticated, setIsAuthenticated] = useState(storedSnapshot?.isAuthenticated ?? !!initialToken);
+  const [isAuthenticated, setIsAuthenticated] = useState(!!initialToken && (storedSnapshot?.isAuthenticated ?? true));
   const [isAuthLoading, setIsAuthLoading] = useState(!!initialToken);
   const [userRole, setUserRole] = useState<'USER' | 'ADMIN' | null>(storedSnapshot?.userRole ?? null);
   const hydrateRunIdRef = useRef(0);
@@ -136,8 +137,13 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const token = getStoredAccessToken();
       if (!token) {
         if (runId === hydrateRunIdRef.current) {
+          setAccessToken(null);
           setIsAuthenticated(false);
           setIsAuthLoading(false);
+          setUserName('');
+          setUserEmail('');
+          setProfileImageState(null);
+          setUserRole(null);
           clearAuthSnapshot();
         }
         return false;
@@ -177,15 +183,20 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return true;
       }
 
+      // If user data is missing or incomplete
+      clearStoredAccessToken();
+      setAccessToken(null);
+      setIsAuthenticated(false);
+      setUserName('');
+      setUserEmail('');
+      setProfileImageState(null);
+      setUserRole(null);
+      profileImageRef.current = null;
+      userNameRef.current = '';
+      userEmailRef.current = '';
+      userRoleRef.current = null;
+      clearAuthSnapshot();
       setIsAuthLoading(false);
-      writeAuthSnapshot({
-        accessToken: token,
-        isAuthenticated: true,
-        userName: userNameRef.current,
-        userEmail: userEmailRef.current,
-        profileImage: profileImageRef.current,
-        userRole: userRoleRef.current,
-      });
       return false;
     } catch (error: any) {
       if (runId !== hydrateRunIdRef.current) {
@@ -194,20 +205,19 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       console.error('[UserContext] Failed to fetch user data:', error);
 
-      if (error?.response?.status === 401) {
-        clearStoredAccessToken();
-        setAccessToken(null);
-        setIsAuthenticated(false);
-        setUserName('');
-        setUserEmail('');
-        setProfileImageState(null);
-        setUserRole(null);
-        profileImageRef.current = null;
-        userNameRef.current = '';
-        userEmailRef.current = '';
-        userRoleRef.current = null;
-        clearAuthSnapshot();
-      }
+      // On any error (401, 403, 500, network error), reset auth state completely
+      clearStoredAccessToken();
+      setAccessToken(null);
+      setIsAuthenticated(false);
+      setUserName('');
+      setUserEmail('');
+      setProfileImageState(null);
+      setUserRole(null);
+      profileImageRef.current = null;
+      userNameRef.current = '';
+      userEmailRef.current = '';
+      userRoleRef.current = null;
+      clearAuthSnapshot();
 
       setIsAuthLoading(false);
       return false;

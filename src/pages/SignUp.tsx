@@ -291,7 +291,7 @@ const SignUp: React.FC = () => {
                 required
               />
               <label className="text-xs text-on-surface-variant leading-relaxed" htmlFor="terms">
-                I agree to the <a className="text-primary font-bold hover:underline" href="#">Terms of Service</a> and <a className="text-primary font-bold hover:underline" href="#">Privacy Policy</a>.
+                I agree to the <Link className="text-primary font-bold hover:underline" to="/terms">Terms of Service</Link> and <Link className="text-primary font-bold hover:underline" to="/privacy">Privacy Policy</Link>.
               </label>
             </div>
 

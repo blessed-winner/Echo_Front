@@ -206,7 +206,7 @@ const Dashboard: React.FC = () => {
   const [reviewProgressPercent, setReviewProgressPercent] = useState(0);
   const [weeklyGoalValue, setWeeklyGoalValue] = useState('0 / 0');
   const [weeklyGoalPercent, setWeeklyGoalPercent] = useState(0);
-  const [activeDecksValue, setActiveDecksValue] = useState('00');
+  const [activeDecksValue, setActiveDecksValue] = useState('0');
   const [retentionRate, setRetentionRate] = useState(0);
   const [peakRetentionRate, setPeakRetentionRate] = useState(0);
   const [dueCount, setDueCount] = useState(0);
