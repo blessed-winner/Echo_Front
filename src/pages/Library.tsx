@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { cn, formatDisplayDate, parseApiDate, stripHtml } from '../lib/utils';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
 import { api } from '../lib/api';
 import { EchoToast } from '../components/EchoToast';
@@ -54,6 +54,8 @@ interface PageResponse<T> {
 
 const Library: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const searchQuery = new URLSearchParams(location.search).get('q') || '';
   const { accessToken, isAuthLoading } = useUser();
   const [topics, setTopics] = useState<TopicDto[]>([]);
   const [recentNotes, setRecentNotes] = useState<NoteDto[]>([]);
@@ -72,72 +74,95 @@ const Library: React.FC = () => {
 
   useEffect(() => {
     let isMounted = true;
+    const trimmedQuery = searchQuery.trim();
 
-    const loadTopics = async () => {
+    const loadData = async () => {
       if (isAuthLoading || !accessToken) return;
-      setIsLoading(true);
-      try {
-        const response = await api.get<PageResponse<TopicDto>>('/topics?page=0&size=100');
-        if (isMounted) {
-          setTopics(response.data?.content || []);
-          setTotalTopics(response.data?.totalElements || 0);
-        }
-      } catch (error) {
-        console.error('Failed to load topics:', error);
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
 
-    void loadTopics();
-    return () => {
-      isMounted = false;
-    };
-  }, [accessToken, isAuthLoading]);
+      if (trimmedQuery) {
+        setIsLoading(true);
+        setIsNotesLoading(true);
+        setIsExpanded(true);
+        setNotesPage(1);
 
-  useEffect(() => {
-    let isMounted = true;
+        try {
+          const [topicsRes, notesRes] = await Promise.all([
+            api.get<PageResponse<TopicDto>>(`/topics/search?query=${encodeURIComponent(trimmedQuery)}&page=0&size=100`),
+            api.get<PageResponse<ApiNoteDto>>(`/notes/search?query=${encodeURIComponent(trimmedQuery)}&page=0&size=100`),
+          ]);
 
-    const loadNotes = async () => {
-      if (isAuthLoading || !accessToken) return;
-      setIsNotesLoading(true);
-      try {
-        let response;
-        if (selectedTopicId === null) {
-          response = await api.get<PageResponse<ApiNoteDto>>('/notes?page=0&size=100');
-        } else {
-          response = await api.get<PageResponse<ApiNoteDto>>(`/topics/${selectedTopicId}/notes?page=0&size=100`);
-        }
-        if (isMounted) {
-          const notesContent = response.data?.content
-            ? (Array.isArray(response.data.content) ? response.data.content.map(normalizeNote) : [])
-            : [];
-          setRecentNotes(notesContent);
-          if (selectedTopicId === null) {
-            setTotalNotes(response.data?.totalElements || 0);
+          if (isMounted) {
+            setTopics(topicsRes.data?.content || []);
+            setTotalTopics(topicsRes.data?.totalElements || 0);
+
+            const notesContent = notesRes.data?.content
+              ? (Array.isArray(notesRes.data.content) ? notesRes.data.content.map(normalizeNote) : [])
+              : [];
+            setRecentNotes(notesContent);
+            setTotalNotes(notesRes.data?.totalElements || 0);
+          }
+        } catch (error) {
+          console.error('Failed to search topics/notes:', error);
+        } finally {
+          if (isMounted) {
+            setIsLoading(false);
+            setIsNotesLoading(false);
           }
         }
-      } catch (error) {
-        console.error('Failed to load notes:', error);
-      } finally {
-        if (isMounted) {
-          setIsNotesLoading(false);
+      } else {
+        setIsLoading(true);
+        setIsNotesLoading(true);
+
+        try {
+          const topicsRes = await api.get<PageResponse<TopicDto>>('/topics?page=0&size=100');
+          if (isMounted) {
+            setTopics(topicsRes.data?.content || []);
+            setTotalTopics(topicsRes.data?.totalElements || 0);
+          }
+
+          let notesRes;
+          if (selectedTopicId === null) {
+            notesRes = await api.get<PageResponse<ApiNoteDto>>('/notes?page=0&size=100');
+          } else {
+            notesRes = await api.get<PageResponse<ApiNoteDto>>(`/topics/${selectedTopicId}/notes?page=0&size=100`);
+          }
+
+          if (isMounted) {
+            const notesContent = notesRes.data?.content
+              ? (Array.isArray(notesRes.data.content) ? notesRes.data.content.map(normalizeNote) : [])
+              : [];
+            setRecentNotes(notesContent);
+            if (selectedTopicId === null) {
+              setTotalNotes(notesRes.data?.totalElements || 0);
+            }
+          }
+        } catch (error) {
+          console.error('Failed to load library data:', error);
+        } finally {
+          if (isMounted) {
+            setIsLoading(false);
+            setIsNotesLoading(false);
+          }
         }
       }
     };
 
-    void loadNotes();
+    const timer = setTimeout(() => {
+      void loadData();
+    }, trimmedQuery ? 200 : 0);
+
     return () => {
       isMounted = false;
+      clearTimeout(timer);
     };
-  }, [accessToken, isAuthLoading, selectedTopicId]);
+  }, [accessToken, isAuthLoading, searchQuery, selectedTopicId]);
 
   useEffect(() => {
-    setIsExpanded(false);
-    setNotesPage(1);
-  }, [selectedTopicId]);
+    if (!searchQuery.trim()) {
+      setIsExpanded(false);
+      setNotesPage(1);
+    }
+  }, [selectedTopicId, searchQuery]);
 
 
   const getTopicIcon = (index: number) => {
@@ -288,6 +313,29 @@ const Library: React.FC = () => {
         </div>
       </div>
 
+      {/* Active Search Banner */}
+      {searchQuery.trim() && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-indigo-50/60 border border-indigo-100/80 rounded-2xl px-6 py-4 mb-8 animate-in fade-in slide-in-from-top duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-700 shrink-0">
+              <span className="material-symbols-outlined !text-xl">search</span>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-900/60 mb-0.5">Active Search Filter</p>
+              <p className="text-sm font-medium text-[#182442]">
+                Showing results for <span className="font-bold italic text-indigo-700">"{searchQuery.trim()}"</span> — <span className="font-bold">{topics.length}</span> matching topic{topics.length === 1 ? '' : 's'} and <span className="font-bold">{recentNotes.length}</span> matching note{recentNotes.length === 1 ? '' : 's'}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate('/library', { replace: true })}
+            className="text-xs font-bold text-slate-600 hover:text-[#182442] bg-white border border-slate-200 hover:border-slate-300 px-4 py-2 rounded-xl transition-all shadow-sm flex items-center gap-1.5 shrink-0"
+          >
+            <span className="material-symbols-outlined !text-base">close</span> Clear Search
+          </button>
+        </div>
+      )}
+
       {/* Bento Grid of Topics */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
         {isLoading ? (
@@ -299,6 +347,16 @@ const Library: React.FC = () => {
             <div className="col-span-12 md:col-span-4 bg-slate-50 border border-slate-200 rounded-xl p-6 h-48 animate-pulse"></div>
             <div className="col-span-12 md:col-span-4 bg-slate-50 border border-slate-200 rounded-xl p-6 h-48 animate-pulse"></div>
           </>
+        ) : searchQuery.trim() && (!topics || topics.length === 0) ? (
+          <div className="col-span-12 bg-gradient-to-br from-slate-50 to-white border border-slate-200 rounded-2xl p-12 flex flex-col items-center justify-center text-center">
+            <div className="w-14 h-14 rounded-2xl bg-indigo-50 flex items-center justify-center mb-3 text-indigo-500">
+              <span className="material-symbols-outlined !text-3xl">search_off</span>
+            </div>
+            <h3 className="text-xl font-bold text-[#182442] mb-1 font-manrope">No Topics Matching "{searchQuery.trim()}"</h3>
+            <p className="text-slate-500 max-w-md leading-relaxed text-sm">
+              We couldn't find any topics matching your search query. Matching notes (if any) are displayed below.
+            </p>
+          </div>
         ) : !topics || topics.length === 0 ? (
           /* Empty state */
           <div className="col-span-12 bg-gradient-to-br from-slate-50 to-white border border-slate-200 rounded-2xl p-20 flex flex-col items-center justify-center text-center">

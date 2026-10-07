@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
 import { api } from '../lib/api';
 import { NotificationPanel } from './NotificationPanel';
@@ -10,18 +10,45 @@ interface UserAnalyticsDto {
 
 export const Header: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const { accessToken, isAuthLoading } = useUser();
   const [streak, setStreak] = useState(0);
   const [isLoadingStreak, setIsLoadingStreak] = useState(true);
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  
+
+  const initialSearchQuery = new URLSearchParams(location.search).get('q') || '';
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
+
   const currentDate = new Date().toLocaleDateString('en-US', { 
     weekday: 'short', 
     month: 'short', 
     day: 'numeric' 
   });
+
+  useEffect(() => {
+    const q = new URLSearchParams(location.search).get('q') || '';
+    setSearchQuery(q);
+  }, [location.search]);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+
+    if (location.pathname === '/library') {
+      navigate(value ? `/library?q=${encodeURIComponent(value)}` : '/library', { replace: true });
+    } else if (value) {
+      navigate(`/library?q=${encodeURIComponent(value)}`);
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    if (location.pathname === '/library') {
+      navigate('/library', { replace: true });
+    }
+  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -117,15 +144,28 @@ export const Header: React.FC = () => {
             <span className="material-symbols-outlined absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#182442] transition-colors !text-lg sm:!text-xl">search</span>
             <input 
               ref={searchInputRef}
-              className="w-full bg-slate-50/80 border border-slate-200/50 rounded-xl sm:rounded-2xl py-2 sm:py-2.5 pl-10 sm:pl-12 pr-16 sm:pr-20 text-xs sm:text-sm focus:bg-white focus:ring-8 focus:ring-[#182442]/5 focus:border-[#182442] outline-none transition-all placeholder:text-slate-400 font-medium shadow-inner truncate" 
-              placeholder="Search..." 
+              value={searchQuery}
+              onChange={handleSearchChange}
+              className="w-full bg-slate-50/80 border border-slate-200/50 rounded-xl sm:rounded-2xl py-2 sm:py-2.5 pl-10 sm:pl-12 pr-10 text-xs sm:text-sm focus:bg-white focus:ring-8 focus:ring-[#182442]/5 focus:border-[#182442] outline-none transition-all placeholder:text-slate-400 font-medium shadow-inner truncate" 
+              placeholder="Search topics or notes..." 
               type="text"
               style={{ fontFamily: "'DM Sans', sans-serif" }}
             />
-            <div className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 hidden sm:flex gap-1 pointer-events-none opacity-40 group-focus-within:opacity-100 transition-opacity">
-              <kbd className="px-1.5 py-0.5 rounded border border-slate-200 bg-white text-[10px] font-bold text-slate-400">⌘</kbd>
-              <kbd className="px-1.5 py-0.5 rounded border border-slate-200 bg-white text-[10px] font-bold text-slate-400">K</kbd>
-            </div>
+            {searchQuery ? (
+              <button 
+                onClick={handleClearSearch}
+                type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-[#182442] transition-colors cursor-pointer"
+                title="Clear search"
+              >
+                <span className="material-symbols-outlined !text-base">close</span>
+              </button>
+            ) : (
+              <div className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 hidden sm:flex gap-1 pointer-events-none opacity-40 group-focus-within:opacity-100 transition-opacity">
+                <kbd className="px-1.5 py-0.5 rounded border border-slate-200 bg-white text-[10px] font-bold text-slate-400">⌘</kbd>
+                <kbd className="px-1.5 py-0.5 rounded border border-slate-200 bg-white text-[10px] font-bold text-slate-400">K</kbd>
+              </div>
+            )}
           </div>
         </div>
       </div>

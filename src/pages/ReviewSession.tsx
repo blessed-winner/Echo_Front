@@ -354,7 +354,13 @@ const ReviewSession: React.FC = () => {
           <span className="material-symbols-outlined text-[#75777e] group-hover:rotate-90 transition-transform">close</span>
         </button>
 
-        <div className="fixed top-8 right-8 flex items-center z-50">
+        <div className="fixed top-8 right-8 flex items-center gap-4 z-50">
+          {currentStreak > 0 && (
+            <div className="flex items-center gap-1.5 bg-[#ecfdf5] border border-[#3c6752]/15 px-2.5 py-1 rounded-full shadow-sm">
+              <span className="material-symbols-outlined text-[#3c6752] !text-[13px]" style={{ fontVariationSettings: "'FILL' 1" }}>local_fire_department</span>
+              <span className="text-[11px] font-bold text-[#244f3b] whitespace-nowrap">{currentStreak} {currentStreak === 1 ? 'Day' : 'Days'} Streak</span>
+            </div>
+          )}
           <Link to="/dashboard" className="block">
             <img 
               src="/images/logo_black.png" 
@@ -375,12 +381,6 @@ const ReviewSession: React.FC = () => {
                     No items due for review right now. Create new memory items to get started.
                   </p>
                 </div>
-                {currentStreak > 0 && (
-                  <div className="flex items-center gap-2 bg-[#ecfdf5] px-4 py-2 rounded-lg border border-[#3c6752]/10">
-                    <span className="material-symbols-outlined text-[#3c6752] text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>local_fire_department</span>
-                    <span className="text-sm font-bold text-[#244f3b]">{currentStreak} {currentStreak === 1 ? 'Day' : 'Days'} Streak</span>
-                  </div>
-                )}
                 <button 
                   onClick={() => navigate('/new')}
                   className="mt-4 bg-[#182442] text-white px-8 py-3 rounded-xl font-bold hover:opacity-90 transition-all shadow-lg shadow-[#182442]/10"
@@ -413,7 +413,13 @@ const ReviewSession: React.FC = () => {
         <span className="material-symbols-outlined text-[#75777e] group-hover:rotate-90 transition-transform">close</span>
       </button>
 
-      <div className="fixed top-8 right-8 flex items-center z-50">
+      <div className="fixed top-8 right-8 flex items-center gap-4 z-50">
+        {currentStreak > 0 && (
+          <div className="flex items-center gap-1.5 bg-[#ecfdf5] border border-[#3c6752]/15 px-2.5 py-1 rounded-full shadow-sm">
+            <span className="material-symbols-outlined text-[#3c6752] !text-[13px]" style={{ fontVariationSettings: "'FILL' 1" }}>local_fire_department</span>
+            <span className="text-[11px] font-bold text-[#244f3b] whitespace-nowrap">{currentStreak} {currentStreak === 1 ? 'Day' : 'Days'} Streak</span>
+          </div>
+        )}
         <Link to="/dashboard" className="block">
           <img 
             src="/images/logo_black.png" 
@@ -424,39 +430,29 @@ const ReviewSession: React.FC = () => {
       </div>
 
       <main className="flex-1 flex flex-col items-center justify-center px-6 py-12 md:py-20">
-        <div className="max-w-[720px] w-full mb-12 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div>
-              <div className="flex items-center gap-3">
-                <h2 className="text-2xl font-bold text-[#182442] leading-none font-manrope">
-                  {cleanSource}
-                </h2>
-                {currentItem && (
-                  <button
-                    onClick={handleViewNote}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-all group"
-                    title="View full note"
-                  >
-                    <span className="material-symbols-outlined text-slate-500 !text-[16px] group-hover:text-[#182442] transition-colors">description</span>
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest group-hover:text-[#182442] transition-colors">View Note</span>
-                  </button>
-                )}
-              </div>
-              <p className="text-sm text-[#45464e] mt-1">
-                {currentItem?.tags?.[0]?.name || 'Memory Item'}
-              </p>
-            </div>
+        <div className="max-w-[720px] w-full mb-12 flex items-start justify-between gap-6">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-2xl font-bold text-[#182442] leading-snug font-manrope break-words">
+              {cleanSource}
+            </h2>
+            <p className="text-xs font-bold text-[#45464e] uppercase tracking-wider mt-1.5">
+              {currentItem?.tags?.[0]?.name || 'Memory Item'}
+            </p>
           </div>
-          <div className="flex items-center gap-6">
-            {currentStreak > 0 && (
-              <div className="flex items-center gap-2 bg-[#eceef0] px-4 py-2 rounded-lg">
-                <span className="material-symbols-outlined text-[#3c6752] text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>local_fire_department</span>
-                <span className="text-sm font-bold text-[#244f3b]">{currentStreak} {currentStreak === 1 ? 'Day' : 'Days'}</span>
-              </div>
+          <div className="flex items-center gap-3 shrink-0 pt-0.5">
+            {currentItem && (
+              <button
+                onClick={handleViewNote}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-all group shrink-0 whitespace-nowrap shadow-sm"
+                title="View full note"
+              >
+                <span className="material-symbols-outlined text-slate-500 !text-[16px] group-hover:text-[#182442] transition-colors shrink-0">description</span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest group-hover:text-[#182442] transition-colors whitespace-nowrap">View Note</span>
+              </button>
             )}
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-[#75777e] text-sm">schedule</span>
-              <span className="text-[12px] font-bold text-[#75777e] tracking-widest uppercase">{currentTime}</span>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg shrink-0 shadow-sm">
+              <span className="material-symbols-outlined text-[#75777e] !text-[16px]">schedule</span>
+              <span className="text-[10px] font-bold text-[#75777e] tracking-widest uppercase whitespace-nowrap">{currentTime}</span>
             </div>
           </div>
         </div>
